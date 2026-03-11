@@ -1,6 +1,3 @@
-pip install plotly
-pip install pandas
-
 import streamlit as st
 import requests
 import xml.etree.ElementTree as ET
