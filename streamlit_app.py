@@ -190,52 +190,64 @@ html, body, [class*="css"] {
 # 4. 데이터 수집 함수
 # ─────────────────────────────────────────────
 
-def _fetch_kpx_raw():
-    """KPX API 실제 호출 — 프록시 우회 헤더 포함"""
-    url = 'https://openapi.kpx.or.kr/openapi/sukub5mToday/getSukub5mToday'
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Accept": "application/xml, text/xml, */*",
-        "Accept-Language": "ko-KR,ko;q=0.9",
-        "Referer": "https://openapi.kpx.or.kr/",
-    }
-    res = requests.get(
-        url,
-        params={'serviceKey': KPX_SERVICE_KEY},
-        headers=headers,
-        timeout=15,
-        verify=True,
-    )
-    root = ET.fromstring(res.content)
-    items = root.findall(".//item")
-    if not items:
-        raise ValueError("KPX 데이터 없음")
-    results = []
-    for item in items[-12:]:
-        raw_time = item.findtext('baseDatetime')
-        ft = f"{raw_time[:4]}-{raw_time[4:6]}-{raw_time[6:8]} {raw_time[8:10]}:{raw_time[10:12]}:{raw_time[12:14]}"
-        results.append({
-            "baseDatetime":   raw_time,
-            "formatted_time": ft,
-            "supp":  float(item.findtext('suppAbility') or 0),
-            "curr":  float(item.findtext('currPwrTot') or 0),
-            "spare": float(item.findtext('suppReservePwr') or 0),
-            "ratio": item.findtext('suppReserveRate') or "-",
-        })
-    return results
-
-
 def get_realtime_pwr_detail():
-    """KPX 데이터 조회 — 실패 시 마지막 성공 데이터 반환"""
+    """
+    KPX 데이터 조회.
+    1순위: GitHub Actions가 저장한 data/kpx_latest.json (로컬/Streamlit Cloud 공통)
+    2순위: KPX API 직접 호출 (로컬 개발용 fallback)
+    """
+    import json, os
+
+    json_path = os.path.join(os.path.dirname(__file__), "data", "kpx_latest.json")
+
+    # ── 1순위: JSON 파일 ──────────────────────────
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, encoding="utf-8") as f:
+                payload = json.load(f)
+            data = payload.get("records", [])
+            if data:
+                st.session_state['kpx_last_data'] = data
+                st.session_state['kpx_fetched_at'] = payload.get("fetched_at", "-")
+                st.session_state['kpx_error'] = None
+                return data
+        except Exception as e:
+            st.session_state['kpx_error'] = f"JSON 읽기 오류: {e}"
+
+    # ── 2순위: API 직접 호출 (로컬 환경) ─────────
     try:
-        data = _fetch_kpx_raw()
+        url = 'https://openapi.kpx.or.kr/openapi/sukub5mToday/getSukub5mToday'
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/xml, text/xml, */*",
+            "Accept-Language": "ko-KR,ko;q=0.9",
+            "Referer": "https://openapi.kpx.or.kr/",
+        }
+        res = requests.get(url, params={'serviceKey': KPX_SERVICE_KEY},
+                           headers=headers, timeout=15)
+        root = ET.fromstring(res.content)
+        items = root.findall(".//item")
+        if not items:
+            raise ValueError("KPX 데이터 없음")
+        data = []
+        for item in items[-12:]:
+            raw = item.findtext('baseDatetime')
+            ft  = f"{raw[:4]}-{raw[4:6]}-{raw[6:8]} {raw[8:10]}:{raw[10:12]}:{raw[12:14]}"
+            data.append({
+                "baseDatetime":   raw,
+                "formatted_time": ft,
+                "supp":  float(item.findtext('suppAbility')    or 0),
+                "curr":  float(item.findtext('currPwrTot')     or 0),
+                "spare": float(item.findtext('suppReservePwr') or 0),
+                "ratio": item.findtext('suppReserveRate')      or "-",
+            })
         st.session_state['kpx_last_data'] = data
-        st.session_state['kpx_last_time'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        st.session_state['kpx_fetched_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         st.session_state['kpx_error'] = None
         return data
     except Exception as e:
         st.session_state['kpx_error'] = str(e)
-        if 'kpx_last_data' in st.session_state and st.session_state['kpx_last_data']:
+        if st.session_state.get('kpx_last_data'):
             return st.session_state['kpx_last_data']
         raise e
 
