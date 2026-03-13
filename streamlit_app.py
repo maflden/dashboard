@@ -5,6 +5,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
+import json, os
 
 # ─────────────────────────────────────────────
 # 1. 페이지 설정
@@ -19,13 +20,13 @@ st.set_page_config(
 # ─────────────────────────────────────────────
 # 2. API 키
 # ─────────────────────────────────────────────
-KPX_SERVICE_KEY  = "11d07546d5cc1d813529086db2074456e7567d7f15e13e2e4357e5f22a81495a"
-ECOS_API_KEY     = "GFRDCL2A2MQA9HE04227"
-KOSIS_API_KEY    = "MTEzNTViODg3YmVkYjM4MmNmNmJlNTAwMWQyMDBlZWM="
-OPINET_API_KEY   = "ih5C0ZfGoxGs5GPXpW9aQv5cWB1nr8tdgZH7lN2Mk"
+KPX_SERVICE_KEY = "11d07546d5cc1d813529086db2074456e7567d7f15e13e2e4357e5f22a81495a"
+ECOS_API_KEY    = "GFRDCL2A2MQA9HE04227"
+KOSIS_API_KEY   = "MTEzNTViODg3YmVkYjM4MmNmNmJlNTAwMWQyMDBlZWM="
+OPINET_API_KEY  = "ih5C0ZfGoxGs5GPXpW9aQv5cWB1nr8tdgZH7lN2Mk"
 
 # ─────────────────────────────────────────────
-# 3. CSS
+# 3. CSS — 화이트 계열 테마
 # ─────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -33,153 +34,98 @@ st.markdown("""
 
 html, body, [class*="css"] {
     font-family: 'Noto Sans KR', sans-serif;
+    background-color: #f4f6f9;
+    color: #1a2332;
 }
 
+/* 헤더 */
 .dash-header {
-    background: linear-gradient(135deg, #0a1628 0%, #0d2240 60%, #0f2a50 100%);
-    border-bottom: 1px solid rgba(66,165,245,0.25);
+    background: linear-gradient(135deg, #1a3a5c 0%, #1565c0 60%, #1976d2 100%);
     border-radius: 16px;
     padding: 24px 32px;
     margin-bottom: 20px;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 4px 20px rgba(21,101,192,0.25);
 }
 .dash-header::after {
     content: '';
     position: absolute;
-    right: -80px; top: -80px;
-    width: 300px; height: 300px;
-    background: radial-gradient(circle, rgba(0,180,255,0.07) 0%, transparent 70%);
+    right: -60px; top: -60px;
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
     border-radius: 50%;
 }
 .dash-title {
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 900;
     color: #ffffff;
     letter-spacing: -0.5px;
     margin: 0;
 }
-.dash-title span { color: #42a5f5; }
+.dash-title span { color: #90caf9; }
 .dash-subtitle {
-    font-size: 12px;
-    color: #90a4ae;
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
     margin-top: 4px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
 
-.pwr-bar {
-    background: linear-gradient(90deg, #060e1a, #0a1628, #060e1a);
-    border: 1px solid rgba(66,165,245,0.2);
-    border-radius: 12px;
-    padding: 16px 28px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
-    box-shadow: 0 0 30px rgba(0,100,200,0.15);
-}
-.pwr-item { text-align: center; flex: 1; }
-.pwr-label { font-size: 10px; color: #546e7a; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
-.pwr-value { font-family: 'Share Tech Mono', monospace; font-size: 20px; font-weight: 700; }
-.pwr-divider { width: 1px; height: 40px; background: rgba(255,255,255,0.08); flex-shrink: 0; }
-.pwr-time { font-size: 10px; color: #546e7a; text-align: right; padding-left: 20px; border-left: 1px solid rgba(255,255,255,0.08); white-space: nowrap; }
-
+/* KPI 카드 */
 .kpi-card {
-    background: #0d1b2a;
-    border-radius: 14px;
-    padding: 18px 20px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px 18px;
     border-top: 4px solid;
-    border-left: 1px solid rgba(255,255,255,0.05);
-    border-right: 1px solid rgba(255,255,255,0.05);
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-left: 1px solid #e8edf2;
+    border-right: 1px solid #e8edf2;
+    border-bottom: 1px solid #e8edf2;
     height: 130px;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: box-shadow 0.2s, transform 0.2s;
 }
-.kpi-name { font-size: 11px; color: #78909c; font-weight: 600; letter-spacing: 0.04em; margin-bottom: 8px; }
-.kpi-val { font-size: 26px; font-weight: 900; color: #fff; line-height: 1; }
-.kpi-unit { font-size: 13px; font-weight: 400; color: #90a4ae; margin-left: 3px; }
-.kpi-sub { font-size: 11px; font-weight: 600; margin-top: 4px; }
-.kpi-date { font-size: 10px; color: #455a64; margin-top: 3px; letter-spacing: 0.02em; }
+.kpi-card:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.10);
+    transform: translateY(-2px);
+}
+.kpi-name { font-size: 11px; color: #7b8fa6; font-weight: 600; letter-spacing: 0.04em; margin-bottom: 6px; }
+.kpi-val  { font-size: 24px; font-weight: 900; color: #1a2332; line-height: 1; }
+.kpi-unit { font-size: 12px; font-weight: 400; color: #9eaab8; margin-left: 3px; }
+.kpi-sub  { font-size: 11px; font-weight: 600; margin-top: 4px; }
+.kpi-date { font-size: 10px; color: #b0bec5; margin-top: 3px; letter-spacing: 0.02em; }
 
+/* 섹션 타이틀 */
 .section-title {
     font-size: 12px;
     font-weight: 700;
-    color: #42a5f5;
+    color: #1565c0;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    border-left: 3px solid #42a5f5;
+    border-left: 3px solid #1565c0;
     padding-left: 10px;
     margin: 24px 0 14px 0;
 }
 
-.pwr-detail-card {
-    background: linear-gradient(135deg, #0d1b2a 0%, #1a3a5c 60%, #1565c0 100%);
-    border-radius: 16px;
-    padding: 28px 32px;
-    border-left: 5px solid #42a5f5;
-    box-shadow: 0 8px 32px rgba(21,101,192,0.25);
-    position: relative;
-    overflow: hidden;
-    height: 100%;
-}
-.pwr-detail-card::before {
-    content: '';
-    position: absolute;
-    top: -50px; right: -50px;
-    width: 180px; height: 180px;
-    background: radial-gradient(circle, rgba(66,165,245,0.12) 0%, transparent 70%);
-    border-radius: 50%;
-}
-.live-badge {
-    display: inline-block;
-    background: #1b5e20;
-    color: #a5d6a7;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 2px 10px;
-    border-radius: 20px;
-    border: 1px solid #388e3c;
-    margin-bottom: 12px;
-    letter-spacing: 0.05em;
-}
-.big-power {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 52px;
-    font-weight: 900;
-    color: #fff;
-    line-height: 1;
-    text-shadow: 0 0 24px rgba(66,165,245,0.5);
-}
-.big-unit { font-size: 20px; color: #90caf9; font-weight: 400; margin-left: 6px; }
-.ts-box {
-    display: inline-block;
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px;
-    padding: 8px 14px;
-    font-size: 12px;
-    color: #b0bec5;
-    margin-top: 18px;
-}
-
+/* 에러 박스 */
 .error-box {
-    background: #1a0a0a;
+    background: #fff5f5;
     border-left: 5px solid #ef5350;
     border-radius: 8px;
     padding: 14px 20px;
-    color: #ef9a9a;
+    color: #c62828;
     font-size: 13px;
 }
 
+/* 푸터 */
 .footer {
     font-size: 11px;
-    color: #546e7a;
+    color: #9eaab8;
     text-align: center;
     padding: 16px 0 8px;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    border-top: 1px solid #e8edf2;
     margin-top: 24px;
 }
 </style>
@@ -191,30 +137,21 @@ html, body, [class*="css"] {
 # ─────────────────────────────────────────────
 
 def get_realtime_pwr_detail():
-    """
-    KPX 데이터 조회.
-    1순위: GitHub Actions가 저장한 data/kpx_latest.json (로컬/Streamlit Cloud 공통)
-    2순위: KPX API 직접 호출 (로컬 개발용 fallback)
-    """
-    import json, os
-
+    """KPX: JSON 파일 우선, 없으면 API 직접 호출"""
     json_path = os.path.join(os.path.dirname(__file__), "data", "kpx_latest.json")
 
-    # ── 1순위: JSON 파일 ──────────────────────────
     if os.path.exists(json_path):
         try:
             with open(json_path, encoding="utf-8") as f:
                 payload = json.load(f)
             data = payload.get("records", [])
             if data:
-                st.session_state['kpx_last_data'] = data
                 st.session_state['kpx_fetched_at'] = payload.get("fetched_at", "-")
                 st.session_state['kpx_error'] = None
                 return data
         except Exception as e:
             st.session_state['kpx_error'] = f"JSON 읽기 오류: {e}"
 
-    # ── 2순위: API 직접 호출 (로컬 환경) ─────────
     try:
         url = 'https://openapi.kpx.or.kr/openapi/sukub5mToday/getSukub5mToday'
         headers = {
@@ -223,8 +160,7 @@ def get_realtime_pwr_detail():
             "Accept-Language": "ko-KR,ko;q=0.9",
             "Referer": "https://openapi.kpx.or.kr/",
         }
-        res = requests.get(url, params={'serviceKey': KPX_SERVICE_KEY},
-                           headers=headers, timeout=15)
+        res = requests.get(url, params={'serviceKey': KPX_SERVICE_KEY}, headers=headers, timeout=15)
         root = ET.fromstring(res.content)
         items = root.findall(".//item")
         if not items:
@@ -241,7 +177,6 @@ def get_realtime_pwr_detail():
                 "spare": float(item.findtext('suppReservePwr') or 0),
                 "ratio": item.findtext('suppReserveRate')      or "-",
             })
-        st.session_state['kpx_last_data'] = data
         st.session_state['kpx_fetched_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         st.session_state['kpx_error'] = None
         return data
@@ -255,41 +190,65 @@ def get_realtime_pwr_detail():
 @st.cache_data(ttl=3600)
 def get_strategic_data():
     items = []
-    items.append({"name": "🌿 온실가스 배출량", "value": 624.2, "unit": "백만 톤", "color": "#2e7d32", "sub": "🔻 전년比 4.4% 감소", "date": "2023년 확정치"})
-
+    items.append({"name": "🌿 온실가스 배출량", "value": 624.2, "unit": "백만 톤",
+                  "color": "#2e7d32", "sub": "🔻 전년比 4.4% 감소", "date": "2023년 확정치"})
     try:
         url = (f"https://kosis.kr/openapi/Param/statisticsParameterData.do"
                f"?method=getList&apiKey={KOSIS_API_KEY}&itmId=13103136288999+"
                f"&objL1=13102136288ACC_ITEM.20101+&format=json&jsonVD=Y"
                f"&prdSe=Y&newEstPrdCnt=1&orgId=301&tblId=DT_200Y10")
         res = requests.get(url, timeout=5).json()
-        items.append({"name": "💰 GDP 성장률", "value": float(res[0]['DT']), "unit": "%", "color": "#1565c0", "sub": "실질성장률", "date": "KOSIS 최신"})
+        items.append({"name": "💰 GDP 성장률", "value": float(res[0]['DT']), "unit": "%",
+                      "color": "#1565c0", "sub": "실질성장률", "date": "KOSIS 최신"})
     except:
         pass
-
     try:
         url = (f"http://ecos.bok.or.kr/api/StatisticSearch/{ECOS_API_KEY}"
-               f"/json/kr/1/1/731Y001/D/20260306/20260313/0000001")
+               f"/json/kr/1/1/731Y001/D/20260306/20260306/0000001")
         res = requests.get(url, timeout=5).json()
         val = float(res['StatisticSearch']['row'][0]['DATA_VALUE'])
-        items.append({"name": "💵 원/달러 환율", "value": val, "unit": "원", "color": "#ef6c00", "sub": "시장평균", "date": datetime.now().strftime("%Y-%m-%d")})
+        items.append({"name": "💵 원/달러 환율", "value": val, "unit": "원",
+                      "color": "#ef6c00", "sub": "시장평균", "date": datetime.now().strftime("%Y-%m-%d")})
     except:
         pass
-
     try:
         root = ET.fromstring(
-            requests.get(
-                f'https://www.opinet.co.kr/api/avgAllPrice.do?out=xml&certkey={OPINET_API_KEY}',
-                timeout=5
-            ).content
+            requests.get(f'https://www.opinet.co.kr/api/avgAllPrice.do?out=xml&certkey={OPINET_API_KEY}', timeout=5).content
         )
         for oil in root.findall('OIL'):
             if oil.findtext('PRODCD') == 'B027':
-                items.append({"name": "⛽ 무연휘발유", "value": float(oil.findtext('PRICE')), "unit": "원/L", "color": "#fbc02d", "sub": "전국평균", "date": datetime.now().strftime("%Y-%m-%d")})
+                items.append({"name": "⛽ 무연휘발유", "value": float(oil.findtext('PRICE')), "unit": "원/L",
+                               "color": "#f9a825", "sub": "전국평균", "date": datetime.now().strftime("%Y-%m-%d")})
     except:
         pass
-
     return items
+
+
+@st.cache_data(ttl=3600)
+def get_kospi():
+    """FinanceDataReader로 코스피 지수 조회"""
+    try:
+        import FinanceDataReader as fdr
+        df = fdr.DataReader('KS11')
+        if df.empty:
+            return None
+        latest = df.iloc[-1]
+        prev   = df.iloc[-2]
+        close  = float(latest['Close'])
+        change = close - float(prev['Close'])
+        chg_pct = change / float(prev['Close']) * 100
+        return {
+            "close":   close,
+            "change":  change,
+            "chg_pct": chg_pct,
+            "date":    df.index[-1].strftime("%Y-%m-%d"),
+            "open":    float(latest['Open']),
+            "high":    float(latest['High']),
+            "low":     float(latest['Low']),
+            "volume":  float(latest.get('Volume', 0)),
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 
 # ─────────────────────────────────────────────
@@ -299,7 +258,7 @@ now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 st.markdown(f"""
 <div class="dash-header">
     <div class="dash-title">⚡ 국가 <span>에너지 및 산업</span> 핵심지표 대시보드</div>
-    <div class="dash-subtitle">Office of Strategy &amp; & R&D Planning Dashboard &nbsp;·&nbsp; v3.0 &nbsp;·&nbsp; 조회: {now_str}</div>
+    <div class="dash-subtitle">Energy Strategy &amp; Policy Planning Dashboard &nbsp;·&nbsp; v4.0 &nbsp;·&nbsp; 조회: {now_str}</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -310,17 +269,16 @@ with col_r:
         st.rerun()
 with col_info:
     st.markdown(
-        "<div style='padding-top:8px; font-size:12px; color:#546e7a;'>"
-        "⏱ KPX 15분 · ECOS/KOSIS/Opinet 1시간 간격 자동 갱신</div>",
+        "<div style='padding-top:8px; font-size:12px; color:#9eaab8;'>"
+        "⏱ KPX 15분 · KOSPI/ECOS/KOSIS/Opinet 1시간 간격 자동 갱신</div>",
         unsafe_allow_html=True
     )
 
 st.markdown("---")
 
 # ─────────────────────────────────────────────
-# 6. 실시간 전력 수급 상단 요약 바
+# 6. KPX 데이터 로드
 # ─────────────────────────────────────────────
-# KPX 에러 상태 초기화
 if 'kpx_error' not in st.session_state:
     st.session_state['kpx_error'] = None
 
@@ -328,26 +286,35 @@ try:
     pwr_list = get_realtime_pwr_detail()
     pwr = pwr_list[-1]
     supply_pct = round(pwr['curr'] / pwr['supp'] * 100, 1) if pwr['supp'] else 0
-
-    # 캐시 데이터 사용 중 안내
     if st.session_state.get('kpx_error'):
-        last_t = st.session_state.get('kpx_last_time', '알 수 없음')
-        st.warning(f"⚠️ KPX API 연결 실패 — 마지막 성공 데이터 표시 중 (수집: {last_t})\n오류: {st.session_state['kpx_error']}", icon="🕐")
-
+        st.warning(f"⚠️ KPX 연결 실패 — 캐시 데이터 표시 중  |  오류: {st.session_state['kpx_error']}")
 except Exception as e:
     st.markdown(f"<div class='error-box'>⚠️ 전력 데이터 오류: {e}</div>", unsafe_allow_html=True)
-    pwr_list = []
-    pwr = None
-    supply_pct = 0
+    pwr_list, pwr, supply_pct = [], None, 0
 
 # ─────────────────────────────────────────────
-# 7. KPI 카드 행
+# 7. 핵심 전략 지표 (R&D + 거시 + KOSPI)
 # ─────────────────────────────────────────────
 st.markdown("<div class='section-title'>핵심 전략 지표</div>", unsafe_allow_html=True)
 
 eco_items = get_strategic_data()
-kpi_cols = st.columns(5)
+kospi_data = get_kospi()
 
+# KOSPI 카드 데이터 준비
+if kospi_data and "error" not in kospi_data:
+    kospi_chg     = kospi_data['change']
+    kospi_chg_pct = kospi_data['chg_pct']
+    kospi_color   = "#c62828" if kospi_chg >= 0 else "#1565c0"
+    kospi_arrow   = "▲" if kospi_chg >= 0 else "▼"
+    kospi_sub     = f"{kospi_arrow} {abs(kospi_chg):,.2f} ({abs(kospi_chg_pct):.2f}%)"
+    kospi_val     = f"{kospi_data['close']:,.2f}"
+    kospi_date    = kospi_data['date']
+else:
+    kospi_color, kospi_sub, kospi_val, kospi_date = "#9eaab8", "데이터 없음", "-", "-"
+
+kpi_cols = st.columns(6)
+
+# R&D 예산
 with kpi_cols[0]:
     st.markdown("""
     <div class="kpi-card" style="border-top-color:#e91e63;">
@@ -358,7 +325,8 @@ with kpi_cols[0]:
     </div>
     """, unsafe_allow_html=True)
 
-for i, col in enumerate(kpi_cols[1:]):
+# 거시 지표 (온실가스, GDP, 환율, 유가)
+for i, col in enumerate(kpi_cols[1:5]):
     if i < len(eco_items):
         item = eco_items[i]
         with col:
@@ -371,26 +339,29 @@ for i, col in enumerate(kpi_cols[1:]):
             </div>
             """, unsafe_allow_html=True)
 
+# KOSPI
+with kpi_cols[5]:
+    st.markdown(f"""
+    <div class="kpi-card" style="border-top-color:{kospi_color};">
+        <div class="kpi-name">📈 KOSPI 지수</div>
+        <div class="kpi-val" style="font-size:22px;">{kospi_val}<span class="kpi-unit">pt</span></div>
+        <div class="kpi-sub" style="color:{kospi_color};">{kospi_sub}</div>
+        <div class="kpi-date">📅 {kospi_date}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
 # ─────────────────────────────────────────────
 # 8. 신재생에너지 설비 현황
 # ─────────────────────────────────────────────
 st.markdown("<div class='section-title'>신재생에너지 설비 현황</div>", unsafe_allow_html=True)
 
-re_df = pd.DataFrame([
-    {"name": "태양광",   "MW": 30760.3},
-    {"name": "풍력",     "MW": 2437.3},
-    {"name": "바이오",   "MW": 2561.4},
-    {"name": "수력",     "MW": 1815.4},
-    {"name": "연료전지", "MW": 1289.8},
-])
-
 re_kpi_cols = st.columns(5)
 re_cards = [
     {"name": "🌱 신재생에너지 총계", "value": "39,465.1", "unit": "MW", "color": "#00897b", "sub": "설비용량 합계", "date": "2025-12 기준"},
-    {"name": "☀️ 태양광",           "value": "30,760.3", "unit": "MW", "color": "#fdd835", "sub": "전체의 77.9%",  "date": "2025-12 기준"},
+    {"name": "☀️ 태양광",           "value": "30,760.3", "unit": "MW", "color": "#f9a825", "sub": "전체의 77.9%",  "date": "2025-12 기준"},
     {"name": "💨 풍력",              "value": "2,437.3",  "unit": "MW", "color": "#29b6f6", "sub": "전체의 6.2%",   "date": "2025-12 기준"},
-    {"name": "🌿 바이오",            "value": "2,561.4",  "unit": "MW", "color": "#66bb6a", "sub": "전체의 6.5%",   "date": "2025-12 기준"},
-    {"name": "🔋 연료전지",          "value": "1,289.8",  "unit": "MW", "color": "#ab47bc", "sub": "전체의 3.3%",   "date": "2025-12 기준"},
+    {"name": "🌿 바이오",            "value": "2,561.4",  "unit": "MW", "color": "#43a047", "sub": "전체의 6.5%",   "date": "2025-12 기준"},
+    {"name": "🔋 연료전지",          "value": "1,289.8",  "unit": "MW", "color": "#7b1fa2", "sub": "전체의 3.3%",   "date": "2025-12 기준"},
 ]
 for i, col in enumerate(re_kpi_cols):
     card = re_cards[i]
@@ -404,11 +375,6 @@ for i, col in enumerate(re_kpi_cols):
         </div>
         """, unsafe_allow_html=True)
 
-# with st.expander("📊 신재생에너지 상세 차트 분석", expanded=False):
-    # re_tab1, re_tab2 = st.tabs(["📊 에너지원별 비중", "📈 설비용량 비교"])
-    # ...
-    pass
-
 # ─────────────────────────────────────────────
 # 9. 실시간 전력 수급 현황
 # ─────────────────────────────────────────────
@@ -416,28 +382,31 @@ st.markdown("<div class='section-title'>실시간 전력 수급 현황</div>", u
 
 pwr_cols = st.columns(3)
 pwr_cards = [
-    {"name": "🏭 발전설비용량",    "value": "158,147",               "unit": "MW", "color": "#42a5f5", "sub": "원자력 26,050 · 석탄 40,766 · 가스 45,705 · 신재생 39,790", "date": "2026-03 기준"},
-    {"name": "⚡ 현재 전력 수요",  "value": f"{pwr['curr']:,.0f}"  if pwr else "-", "unit": "MW", "color": "#ff4b4b", "sub": "● LIVE",       "date": pwr['formatted_time'] if pwr else "-"},
-    {"name": "🔌 공급능력",        "value": f"{pwr['supp']:,.0f}"  if pwr else "-", "unit": "MW", "color": "#00d4ff", "sub": "공급 가능량",   "date": pwr['formatted_time'] if pwr else "-"},
+    {"name": "🏭 발전설비용량", "value": "158,147", "unit": "MW",
+     "color": "#1565c0", "sub": "원자력 26,050 · 석탄 40,766 · 가스 45,705 · 신재생 39,790",
+     "date": "2026-03 기준"},
+    {"name": "⚡ 현재 전력 수요", "value": f"{pwr['curr']:,.0f}" if pwr else "-", "unit": "MW",
+     "color": "#e53935", "sub": "● LIVE", "date": pwr['formatted_time'] if pwr else "-"},
+    {"name": "🔌 공급능력", "value": f"{pwr['supp']:,.0f}" if pwr else "-", "unit": "MW",
+     "color": "#1976d2", "sub": "공급 가능량", "date": pwr['formatted_time'] if pwr else "-"},
 ]
 for i, col in enumerate(pwr_cols):
     card = pwr_cards[i]
     with col:
         if i == 0:
-            # 발전설비용량 카드 — breakdown 라인 포함, 제목만 링크
             st.markdown(f"""
             <div class="kpi-card" style="border-top-color:{card['color']}; height:130px;">
                 <div class="kpi-name">
                     <a href="https://epsis.kpx.or.kr/epsisnew/selectEkpoBftChart.do?menuId=020100"
                        target="_blank"
-                       style="color:#78909c; text-decoration:none;"
-                       onmouseover="this.style.color='#42a5f5';"
-                       onmouseout="this.style.color='#78909c';">
+                       style="color:#7b8fa6; text-decoration:none;"
+                       onmouseover="this.style.color='#1565c0';"
+                       onmouseout="this.style.color='#7b8fa6';">
                         {card['name']} <span style="font-size:10px;">↗</span>
                     </a>
                 </div>
                 <div class="kpi-val">{card['value']}<span class="kpi-unit">{card['unit']}</span></div>
-                <div style="font-size:10px; color:#78909c; margin-top:4px; line-height:1.5;">{card['sub']}</div>
+                <div style="font-size:10px; color:#9eaab8; margin-top:4px; line-height:1.6;">{card['sub']}</div>
                 <div class="kpi-date">📅 {card['date']}</div>
             </div>
             """, unsafe_allow_html=True)
@@ -451,24 +420,17 @@ for i, col in enumerate(pwr_cols):
             </div>
             """, unsafe_allow_html=True)
 
-# 토글: 수급 이력 + 추이 차트
-# with st.expander("📊 전력 수급 상세 차트 분석", expanded=False):
-    # if pwr_list:
-    #     tab_hist, tab_trend = st.tabs(["📋 최근 수급 이력", "📈 전력 추이"])
-    #     ...
-    pass
-
 # ─────────────────────────────────────────────
 # 10. 푸터 + 자동 새로고침
 # ─────────────────────────────────────────────
 st.markdown(
     "<div class='footer'>"
-    "데이터 출처: KPX(전력거래소) · ECOS(한국은행) · KOSIS(통계청) · Opinet(한국석유공사) · 정부 예산안<br>"
+    "데이터 출처: KPX(전력거래소) · FinanceDataReader(KOSPI) · ECOS(한국은행) · KOSIS(통계청) · Opinet(한국석유공사) · 정부 예산안<br>"
     "이 페이지는 15분마다 자동으로 새로고침됩니다."
     "</div>",
     unsafe_allow_html=True,
 )
-# 15분 자동 새로고침 (Streamlit Cloud 호환)
+
 try:
     from streamlit_autorefresh import st_autorefresh
     st_autorefresh(interval=900_000, key="autorefresh")
