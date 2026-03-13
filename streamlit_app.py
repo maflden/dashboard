@@ -269,7 +269,7 @@ def get_strategic_data():
 
     try:
         url = (f"http://ecos.bok.or.kr/api/StatisticSearch/{ECOS_API_KEY}"
-               f"/json/kr/1/1/731Y001/D/20260306/20260306/0000001")
+               f"/json/kr/1/1/731Y001/D/20260306/20260313/0000001")
         res = requests.get(url, timeout=5).json()
         val = float(res['StatisticSearch']['row'][0]['DATA_VALUE'])
         items.append({"name": "💵 원/달러 환율", "value": val, "unit": "원", "color": "#ef6c00", "sub": "시장평균", "date": datetime.now().strftime("%Y-%m-%d")})
@@ -299,7 +299,7 @@ now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 st.markdown(f"""
 <div class="dash-header">
     <div class="dash-title">⚡ 국가 <span>에너지 및 산업</span> 핵심지표 대시보드</div>
-    <div class="dash-subtitle">Energy Strategy &amp; Policy Planning Dashboard &nbsp;·&nbsp; v3.0 &nbsp;·&nbsp; 조회: {now_str}</div>
+    <div class="dash-subtitle">Office of Strategy &amp; & R&D Planning Dashboard &nbsp;·&nbsp; v3.0 &nbsp;·&nbsp; 조회: {now_str}</div>
 </div>
 """, unsafe_allow_html=True)
 
