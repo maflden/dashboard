@@ -226,26 +226,27 @@ def get_strategic_data():
 
 @st.cache_data(ttl=3600)
 def get_kospi():
-    """FinanceDataReader로 코스피 지수 조회"""
+    """yfinance로 코스피 지수 조회 (^KS11)"""
     try:
-        import FinanceDataReader as fdr
-        df = fdr.DataReader('KS11')
+        import yfinance as yf
+        ticker = yf.Ticker("^KS11")
+        df = ticker.history(period="5d")
         if df.empty:
-            return None
+            return {"error": "데이터 없음"}
+        df = df.dropna(subset=["Close"])
         latest = df.iloc[-1]
         prev   = df.iloc[-2]
-        close  = float(latest['Close'])
-        change = close - float(prev['Close'])
-        chg_pct = change / float(prev['Close']) * 100
+        close   = float(latest["Close"])
+        change  = close - float(prev["Close"])
+        chg_pct = change / float(prev["Close"]) * 100
         return {
             "close":   close,
             "change":  change,
             "chg_pct": chg_pct,
             "date":    df.index[-1].strftime("%Y-%m-%d"),
-            "open":    float(latest['Open']),
-            "high":    float(latest['High']),
-            "low":     float(latest['Low']),
-            "volume":  float(latest.get('Volume', 0)),
+            "open":    float(latest["Open"]),
+            "high":    float(latest["High"]),
+            "low":     float(latest["Low"]),
         }
     except Exception as e:
         return {"error": str(e)}
