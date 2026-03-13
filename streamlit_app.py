@@ -224,29 +224,43 @@ def get_strategic_data():
     return items
 
 
-@st.cache_data(ttl=3600)
 def get_kospi():
-    """yfinance로 코스피 지수 조회 (^KS11)"""
+    """
+    KOSPI 데이터 조회.
+    1순위: GitHub Actions가 저장한 data/kospi_latest.json
+    2순위: yfinance 직접 호출 (로컬 개발용 fallback)
+    """
+    json_path = os.path.join(os.path.dirname(__file__), "data", "kospi_latest.json")
+
+    # ── 1순위: JSON 파일 ──────────────────────────
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, encoding="utf-8") as f:
+                data = json.load(f)
+            if "error" not in data and data.get("close"):
+                return data
+        except Exception:
+            pass
+
+    # ── 2순위: yfinance 직접 호출 ─────────────────
     try:
         import yfinance as yf
-        ticker = yf.Ticker("^KS11")
-        df = ticker.history(period="5d")
-        if df.empty:
-            return {"error": "데이터 없음"}
+        df = yf.download("^KS11", period="5d", progress=False, auto_adjust=True)
         df = df.dropna(subset=["Close"])
+        if len(df) < 2:
+            return {"error": "데이터 부족"}
+        if hasattr(df.columns, 'levels'):
+            df.columns = df.columns.get_level_values(0)
         latest = df.iloc[-1]
         prev   = df.iloc[-2]
         close   = float(latest["Close"])
         change  = close - float(prev["Close"])
         chg_pct = change / float(prev["Close"]) * 100
         return {
-            "close":   close,
-            "change":  change,
-            "chg_pct": chg_pct,
+            "close":   round(close, 2),
+            "change":  round(change, 2),
+            "chg_pct": round(chg_pct, 2),
             "date":    df.index[-1].strftime("%Y-%m-%d"),
-            "open":    float(latest["Open"]),
-            "high":    float(latest["High"]),
-            "low":     float(latest["Low"]),
         }
     except Exception as e:
         return {"error": str(e)}
