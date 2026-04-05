@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta, timezone
-#import streamlit.components.v1 as components
+import streamlit.components.v1 as components
 import yfinance as yf
 
 # ─────────────────────────────────────────────
@@ -309,46 +309,47 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+import streamlit.components.v1 as components
+
+# React의 로직을 순수 자바스크립트로 번역하여 적용한 코드
 tradingview_widget = """
-<div class="tradingview-widget-container">
+<div class="tradingview-widget-container" id="tv-container">
   <div class="tradingview-widget-container__widget"></div>
-  <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/markets/" rel="noopener nofollow" target="_blank"><span class="blue-text">Markets today</span></a><span class="trademark"> by TradingView</span></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-tickers.js" async>
-  {
+  <div class="tradingview-widget-copyright">
+    <a href="https://www.tradingview.com/markets/" rel="noopener nofollow" target="_blank"><span class="blue-text">Markets today</span></a><span class="trademark"> by TradingView</span>
+  </div>
+</div>
+
+<script>
+  // React의 useEffect 안에서 작동하던 로직과 100% 동일한 순수 자바스크립트
+  const container = document.getElementById('tv-container');
+  const script = document.createElement('script');
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-tickers.js';
+  script.type = 'text/javascript';
+  script.async = true;
+  
+  // JSON 데이터를 문자열로 변환하여 스크립트 내부에 삽입
+  script.innerHTML = JSON.stringify({
     "symbols": [
-      {
-        "proName": "BLACKBULL:WTI",
-        "title": "WTI"
-      },
-      {
-        "proName": "FX_IDC:USDKRW",
-        "title": "USD to KRW"
-      },
-      {
-        "proName": "VANTAGE:NG",
-        "title": "NG"
-      },
-      {
-        "proName": "CAPITALCOM:COPPER",
-        "title": "Copper"
-      },
-      {
-        "proName": "NCDEX:STEEL",
-        "title": "Steel"
-      }
+      { "proName": "BLACKBULL:WTI", "title": "WTI" },
+      { "proName": "FX_IDC:USDKRW", "title": "USD to KRW" },
+      { "proName": "VANTAGE:NG", "title": "NG" },
+      { "proName": "CAPITALCOM:COPPER", "title": "Copper" },
+      { "proName": "NCDEX:STEEL", "title": "Steel" }
     ],
     "colorTheme": "dark",
     "locale": "en",
-    "largeChartUrl": "",
     "isTransparent": true,
     "showSymbolLogo": true
-  }
-  </script>
-</div>
+  });
+  
+  // 컨테이너에 스크립트 강제 주입
+  container.appendChild(script);
+</script>
 """
 
-# HTML 렌더링
-st.html(tradingview_widget, unsafe_allow_javascript=True)
+# 컴포넌트를 통해 안전하게 렌더링 (높이 80px 지정)
+components.html(tradingview_widget, height=80)
 
 # ─────────────────────────────────────────────
 # KOSPI 및 환율 (Yahoo Finance)
