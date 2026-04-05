@@ -348,6 +348,41 @@ tradingview_widget = """
 # components.html을 사용하여 스크립트 실행 (높이는 티커 위젯에 맞게 80px로 설정)
 components.html(tradingview_widget, height=80, scrolling=False)
 
+# ─────────────────────────────────────────────
+# 구글 뉴스 RSS 실시간 파싱 및 표시
+# ─────────────────────────────────────────────
+@st.cache_data(ttl=600)  # 10분(600초)마다 새로고침하여 과도한 트래픽 방지
+def fetch_google_news():
+    url = "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko"
+    try:
+        res = requests.get(url)
+        root = ET.fromstring(res.content)
+        # 최신 뉴스 상위 3개만 추출
+        items = root.findall('./channel/item')[:3]
+        
+        # 다크 테마에 어울리는 박스 형태의 HTML 생성
+        news_html = """
+        <div style="background-color: rgba(26, 32, 44, 0.6); border: 1px solid #2D3748; padding: 15px; border-radius: 8px; margin-top: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="color: #63B3ED; font-weight: bold; margin-bottom: 10px; font-size: 15px;">📰 실시간 주요 뉴스 (Google News)</div>
+            <ul style="list-style-type: none; padding-left: 0; margin: 0;">
+        """
+        
+        for item in items:
+            title = item.find('title').text
+            link = item.find('link').text
+            # 뉴스 제목 뒤에 나오는 출처(예: " - 머니투데이") 부분을 깔끔하게 보려면 그대로 두거나 파싱할 수 있습니다.
+            news_html += f'<li style="margin-bottom: 8px; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">'
+            news_html += f'✨ <a href="{link}" target="_blank" style="color: #E2E8F0; text-decoration: none; hover: text-white;">{title}</a></li>'
+            
+        news_html += "</ul></div>"
+        return news_html
+    
+    except Exception as e:
+        return f"<div style='color: #FC8181; padding: 10px;'>뉴스를 불러오는 데 실패했습니다. ({e})</div>"
+
+# 뉴스 HTML 화면에 출력
+st.markdown(fetch_google_news(), unsafe_allow_html=True)
+
 col_r, col_info = st.columns([1, 6])
 with col_r:
     if st.button("🔄 새로고침", use_container_width=True):
