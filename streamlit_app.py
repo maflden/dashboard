@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 #import streamlit.components.v1 as components
 import yfinance as yf
 
@@ -367,8 +367,9 @@ def fetch_market_data():
         krw_prev = usdkrw['Close'].iloc[-2] if len(usdkrw) > 1 else krw_current
         krw_change = krw_current - krw_prev
         
-        # 현재 업데이트 시간 기록
-        update_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # ⏰ 한국 시간(KST)으로 강제 변환하여 기록
+        KST = timezone(timedelta(hours=9))
+        update_time = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
         
         return {
             "KOSPI": {"value": kospi_current, "change": kospi_change},
@@ -382,11 +383,10 @@ market_data = fetch_market_data()
 
 # 지표 출력 부분
 if market_data:
-    # 제목과 시간을 한 줄에 배치 (Flexbox 사용)
     st.markdown(f"""
         <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;'>
             <div style='color: #63B3ED; font-weight: bold; font-size: 15px;'>📈 주요 금융 지표</div>
-            <div style='color: #718096; font-size: 12px;'>조회 기준: {market_data['time']}</div>
+            <div style='color: #718096; font-size: 12px;'>조회 기준: {market_data['time']} (KST)</div>
         </div>
     """, unsafe_allow_html=True)
     
@@ -406,7 +406,7 @@ if market_data:
         )
     
     st.markdown("<hr style='border: 1px solid #2D3748; margin-top: 10px; margin-bottom: 20px;'>", unsafe_allow_html=True)
-    
+
 # ─────────────────────────────────────────────
 # 구글 뉴스 RSS 실시간 파싱 및 표시
 # ─────────────────────────────────────────────
