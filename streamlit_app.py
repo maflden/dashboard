@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
-import streamlit.components.v1 as components
+#import streamlit.components.v1 as components
 import yfinance as yf
 
 # ─────────────────────────────────────────────
@@ -347,7 +347,7 @@ tradingview_widget = """
 </div>
 """
 # components.html을 사용하여 스크립트 실행 (높이는 티커 위젯에 맞게 80px로 설정)
-components.html(tradingview_widget, height=80, scrolling=False)
+st.html(tradingview_widget)(tradingview_widget, height=80, scrolling=False)
 
 # ─────────────────────────────────────────────
 # KOSPI 및 환율 (Yahoo Finance)
