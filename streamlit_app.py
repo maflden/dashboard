@@ -298,6 +298,44 @@ def get_strategic_data():
 # ─────────────────────────────────────────────
 # 5. 헤더
 # ─────────────────────────────────────────────
+<!-- TradingView Widget BEGIN -->
+<div class="tradingview-widget-container">
+  <div class="tradingview-widget-container__widget"></div>
+  <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/markets/" rel="noopener nofollow" target="_blank"><span class="blue-text">Markets today</span></a><span class="trademark"> by TradingView</span></div>
+  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-tickers.js" async>
+  {
+  "symbols": [
+    {
+      "proName": "BLACKBULL:WTI",
+      "title": "WTI"
+    },
+    {
+      "proName": "FX_IDC:USDKRW",
+      "title": "USD to KRW"
+    },
+    {
+      "proName": "VANTAGE:NG",
+      "title": "NG"
+    },
+    {
+      "proName": "CAPITALCOM:COPPER",
+      "title": "Copper"
+    },
+    {
+      "proName": "NCDEX:STEEL",
+      "title": "Steel"
+    }
+  ],
+  "colorTheme": "light",
+  "locale": "en",
+  "largeChartUrl": "",
+  "isTransparent": false,
+  "showSymbolLogo": true
+}
+  </script>
+</div>
+<!-- TradingView Widget END -->
+
 now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 st.markdown(f"""
 <div class="dash-header">
