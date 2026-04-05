@@ -6,6 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 import streamlit.components.v1 as components
+import yfinance as yf
 
 # ─────────────────────────────────────────────
 # 1. 페이지 설정
@@ -347,6 +348,57 @@ tradingview_widget = """
 """
 # components.html을 사용하여 스크립트 실행 (높이는 티커 위젯에 맞게 80px로 설정)
 components.html(tradingview_widget, height=80, scrolling=False)
+
+# ─────────────────────────────────────────────
+# KOSPI 및 환율 (Yahoo Finance)
+# ─────────────────────────────────────────────
+@st.cache_data(ttl=300)  # 5분(300초)마다 데이터 갱신
+def fetch_market_data():
+    try:
+        # KOSPI 지수 (^KS11)
+        kospi = yf.Ticker("^KS11").history(period="2d")
+        kospi_current = kospi['Close'].iloc[-1]
+        kospi_prev = kospi['Close'].iloc[-2] if len(kospi) > 1 else kospi_current
+        kospi_change = kospi_current - kospi_prev
+        
+        # 원/달러 환율 (KRW=X)
+        usdkrw = yf.Ticker("KRW=X").history(period="2d")
+        krw_current = usdkrw['Close'].iloc[-1]
+        krw_prev = usdkrw['Close'].iloc[-2] if len(usdkrw) > 1 else krw_current
+        krw_change = krw_current - krw_prev
+        
+        return {
+            "KOSPI": {"value": kospi_current, "change": kospi_change},
+            "USDKRW": {"value": krw_current, "change": krw_change}
+        }
+    except Exception as e:
+        return None
+
+market_data = fetch_market_data()
+
+# Streamlit의 st.metric을 사용하여 깔끔한 박스 형태로 출력
+if market_data:
+    st.markdown("<div style='color: #63B3ED; font-weight: bold; margin-bottom: 10px; font-size: 15px;'>📈 주요 금융 지표</div>", unsafe_allow_html=True)
+    
+    # 3개의 열을 만들어 좌측 2개에 지표 배치 (우측은 여백)
+    col1, col2, col3 = st.columns([1, 1, 2])
+    
+    with col1:
+        st.metric(
+            label="KOSPI", 
+            value=f"{market_data['KOSPI']['value']:,.2f}", 
+            delta=f"{market_data['KOSPI']['change']:,.2f}"
+        )
+    with col2:
+        # 환율은 숫자가 작아지면 좋은 것(원화 가치 상승)이므로 delta_color를 'inverse'로 설정할 수도 있습니다.
+        # 여기서는 일반적인 증시 표기법(상승=초록/빨강)을 따릅니다.
+        st.metric(
+            label="USD/KRW", 
+            value=f"{market_data['USDKRW']['value']:,.2f} 원", 
+            delta=f"{market_data['USDKRW']['change']:,.2f} 원"
+        )
+    
+    st.markdown("<hr style='border: 1px solid #2D3748; margin-top: 10px; margin-bottom: 20px;'>", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
 # 구글 뉴스 RSS 실시간 파싱 및 표시
