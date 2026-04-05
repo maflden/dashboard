@@ -315,38 +315,39 @@ tradingview_widget = """
   <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/markets/" rel="noopener nofollow" target="_blank"><span class="blue-text">Markets today</span></a><span class="trademark"> by TradingView</span></div>
   <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-tickers.js" async>
   {
-  "symbols": [
-    {
-      "proName": "BLACKBULL:WTI",
-      "title": "WTI"
-    },
-    {
-      "proName": "FX_IDC:USDKRW",
-      "title": "USD to KRW"
-    },
-    {
-      "proName": "VANTAGE:NG",
-      "title": "NG"
-    },
-    {
-      "proName": "CAPITALCOM:COPPER",
-      "title": "Copper"
-    },
-    {
-      "proName": "NCDEX:STEEL",
-      "title": "Steel"
-    }
-  ],
-  "colorTheme": "dark", 
-  "locale": "en",
-  "largeChartUrl": "",
-  "isTransparent": true,
-  "showSymbolLogo": true
-}
+    "symbols": [
+      {
+        "proName": "BLACKBULL:WTI",
+        "title": "WTI"
+      },
+      {
+        "proName": "FX_IDC:USDKRW",
+        "title": "USD to KRW"
+      },
+      {
+        "proName": "VANTAGE:NG",
+        "title": "NG"
+      },
+      {
+        "proName": "CAPITALCOM:COPPER",
+        "title": "Copper"
+      },
+      {
+        "proName": "NCDEX:STEEL",
+        "title": "Steel"
+      }
+    ],
+    "colorTheme": "dark",
+    "locale": "en",
+    "largeChartUrl": "",
+    "isTransparent": true,
+    "showSymbolLogo": true
+  }
   </script>
 </div>
 """
-# components.html을 사용하여 스크립트 실행 (높이는 티커 위젯에 맞게 80px로 설정)
+
+# HTML 렌더링
 st.html(tradingview_widget, unsafe_allow_javascript=True)
 
 # ─────────────────────────────────────────────
