@@ -5,6 +5,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
+import streamlit.components.v1 as components
 
 # ─────────────────────────────────────────────
 # 1. 페이지 설정
@@ -298,7 +299,16 @@ def get_strategic_data():
 # ─────────────────────────────────────────────
 # 5. 헤더
 # ─────────────────────────────────────────────
-<!-- TradingView Widget BEGIN -->
+
+now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+st.markdown(f"""
+<div class="dash-header">
+    <div class="dash-title">⚡ 국가 <span>에너지 및 산업</span> 핵심지표 대시보드</div>
+    <div class="dash-subtitle">Energy Strategy &amp; Policy Planning Dashboard &nbsp;·&nbsp; v3.0 &nbsp;·&nbsp; 조회: {now_str}</div>
+</div>
+""", unsafe_allow_html=True)
+
+tradingview_widget = """
 <div class="tradingview-widget-container">
   <div class="tradingview-widget-container__widget"></div>
   <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/markets/" rel="noopener nofollow" target="_blank"><span class="blue-text">Markets today</span></a><span class="trademark"> by TradingView</span></div>
@@ -326,23 +336,17 @@ def get_strategic_data():
       "title": "Steel"
     }
   ],
-  "colorTheme": "light",
+  "colorTheme": "dark", 
   "locale": "en",
   "largeChartUrl": "",
-  "isTransparent": false,
+  "isTransparent": true,
   "showSymbolLogo": true
 }
   </script>
 </div>
-<!-- TradingView Widget END -->
-
-now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-st.markdown(f"""
-<div class="dash-header">
-    <div class="dash-title">⚡ 국가 <span>에너지 및 산업</span> 핵심지표 대시보드</div>
-    <div class="dash-subtitle">Energy Strategy &amp; Policy Planning Dashboard &nbsp;·&nbsp; v3.0 &nbsp;·&nbsp; 조회: {now_str}</div>
-</div>
-""", unsafe_allow_html=True)
+"""
+# components.html을 사용하여 스크립트 실행 (높이는 티커 위젯에 맞게 80px로 설정)
+components.html(tradingview_widget, height=80, scrolling=False)
 
 col_r, col_info = st.columns([1, 6])
 with col_r:
