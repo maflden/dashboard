@@ -473,148 +473,303 @@ with pwr_cols[2]:
 
 
 # ─────────────────────────────────────────────
-# 10. 연료원별 전력 정산단가 대시보드
 # ─────────────────────────────────────────────
-st.markdown("<div class='section-title'>연료원별 전력거래 정산단가</div>", unsafe_allow_html=True)
+# 10. 전력 수급 실적 & 연료원별 정산단가 (탭)
+# ─────────────────────────────────────────────
+st.markdown("<div class='section-title'>전력 수급 실적 &amp; 연료원별 정산단가</div>", unsafe_allow_html=True)
 
 import streamlit.components.v1 as components
 
-power_prices_html = """
-<!DOCTYPE html>
+_TAB_HTML = """<!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        body { background: transparent; }
-    </style>
+<meta charset="UTF-8">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:#f1f5f9}
+  ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+  body{background:transparent}
+  .tab-btn{transition:all .2s;border-bottom:3px solid transparent;cursor:pointer}
+  .tab-btn.active-supply{border-bottom-color:#d97706;color:#92400e;background:#fffbeb}
+  .tab-btn.active-price{border-bottom-color:#4f46e5;color:#3730a3;background:#eef2ff}
+  .tab-panel{display:none}
+  .tab-panel.show{display:block}
+  .fade{animation:fd .3s ease}
+  @keyframes fd{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+</style>
 </head>
 <body class="text-slate-800 font-sans">
-<div class="space-y-6 py-2">
+<div class="py-2">
 
-    <!-- 안내 바 -->
-    <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-r-lg shadow-sm flex items-start gap-3">
-        <i class="fa-solid fa-circle-info text-indigo-500 mt-1"></i>
-        <div>
-            <h3 class="font-bold text-indigo-900">데이터 소스 연동 완료</h3>
-            <p class="text-sm text-indigo-700 mt-1">
-                <b>'HOME_전력거래_정산단가_연료원별.csv'</b> 파일의 구조와 최신 수치를 바탕으로 구성된 대시보드입니다. (단위: 원/kWh)
-            </p>
-        </div>
-    </div>
-
-    <div class="flex justify-between items-end border-b border-slate-200 pb-2">
-        <h2 class="text-xl font-bold text-slate-800" id="dataPeriodRange">데이터 기간: 로딩중...</h2>
-    </div>
-
-    <!-- 요약 카드 -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-800 relative overflow-hidden">
-            <div class="flex justify-between items-start relative z-10">
-                <p class="text-sm text-slate-500 font-bold">최근 평균 정산단가 (합계)</p>
-                <i class="fa-solid fa-calculator text-slate-300 text-xl"></i>
-            </div>
-            <p class="text-3xl font-extrabold text-slate-800 mt-2 relative z-10">
-                <span id="latestTotalAvg">0</span><span class="text-base font-normal text-slate-500 ml-1">원/kWh</span>
-            </p>
-            <p class="text-xs text-slate-400 mt-1 relative z-10" id="latestDate1">- 기준</p>
-        </div>
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-amber-500 relative overflow-hidden">
-            <div class="flex justify-between items-start relative z-10">
-                <p class="text-sm text-slate-500 font-bold">원자력 정산단가</p>
-                <i class="fa-solid fa-atom text-amber-300 text-xl"></i>
-            </div>
-            <p class="text-3xl font-extrabold text-amber-600 mt-2 relative z-10">
-                <span id="latestNuclear">0</span><span class="text-base font-normal text-slate-500 ml-1">원/kWh</span>
-            </p>
-            <p class="text-xs text-slate-400 mt-1 relative z-10" id="latestDate2">- 기준</p>
-        </div>
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-blue-500 relative overflow-hidden">
-            <div class="flex justify-between items-start relative z-10">
-                <p class="text-sm text-slate-500 font-bold">LNG 정산단가</p>
-                <i class="fa-solid fa-fire-flame-simple text-blue-300 text-xl"></i>
-            </div>
-            <p class="text-3xl font-extrabold text-blue-600 mt-2 relative z-10">
-                <span id="latestLNG">0</span><span class="text-base font-normal text-slate-500 ml-1">원/kWh</span>
-            </p>
-            <p class="text-xs text-slate-400 mt-1 relative z-10" id="latestDate3">- 기준</p>
-        </div>
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-emerald-500 relative overflow-hidden">
-            <div class="flex justify-between items-start relative z-10">
-                <p class="text-sm text-slate-500 font-bold">신재생(합계) 정산단가</p>
-                <i class="fa-solid fa-leaf text-emerald-300 text-xl"></i>
-            </div>
-            <p class="text-3xl font-extrabold text-emerald-600 mt-2 relative z-10">
-                <span id="latestRenewable">0</span><span class="text-base font-normal text-slate-500 ml-1">원/kWh</span>
-            </p>
-            <p class="text-xs text-slate-400 mt-1 relative z-10" id="latestDate4">- 기준</p>
-        </div>
-    </div>
-
-    <!-- 라인 차트 -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-        <h3 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-chart-line text-indigo-500"></i> 주요 에너지원별 정산단가 시계열 추이
-        </h3>
-        <div class="relative w-full" style="height:320px;">
-            <canvas id="trendChart"></canvas>
-        </div>
-    </div>
-
-    <!-- 바 + 레이더 차트 -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <h3 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-chart-bar text-slate-500"></i> 최근 월 연료원별 단가 비교
-            </h3>
-            <div class="relative w-full" style="height:260px;">
-                <canvas id="barChart"></canvas>
-            </div>
-        </div>
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <h3 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-solar-panel text-emerald-500"></i> 최근 월 신재생에너지 세부 단가
-            </h3>
-            <div class="relative w-full flex justify-center" style="height:260px;">
-                <canvas id="radarChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- 데이터 테이블 -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 overflow-hidden">
-        <h3 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-table text-slate-500"></i> 전체 세부 데이터 (최근 월 순)
-        </h3>
-        <div class="overflow-x-auto" style="max-height:320px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;">
-            <table class="min-w-full text-sm text-left">
-                <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 shadow-sm z-10">
-                    <tr>
-                        <th class="px-4 py-3 bg-slate-100">기간</th>
-                        <th class="px-4 py-3 bg-slate-100 text-right">합계평균</th>
-                        <th class="px-4 py-3 bg-amber-50 text-right">원자력</th>
-                        <th class="px-4 py-3 bg-slate-200 text-right">석탄(합계)</th>
-                        <th class="px-4 py-3 bg-blue-50 text-right">LNG</th>
-                        <th class="px-4 py-3 bg-emerald-50 text-right">신재생(합계)</th>
-                        <th class="px-4 py-3 bg-emerald-50 text-right">태양광</th>
-                        <th class="px-4 py-3 bg-emerald-50 text-right">풍력</th>
-                        <th class="px-4 py-3 bg-emerald-50 text-right">수력</th>
-                    </tr>
-                </thead>
-                <tbody id="dataTableBody" class="divide-y divide-slate-100 bg-white"></tbody>
-            </table>
-        </div>
-    </div>
+<!-- 탭 버튼 -->
+<div class="flex gap-0 border-b border-slate-200 mb-6">
+  <button id="btn-supply" onclick="switchTab('supply')"
+    class="tab-btn active-supply px-6 py-3 font-bold text-sm flex items-center gap-2 rounded-tl-lg">
+    <i class="fa-solid fa-bolt text-amber-500"></i> 전력 수급 실적
+  </button>
+  <button id="btn-price" onclick="switchTab('price')"
+    class="tab-btn px-6 py-3 font-bold text-sm flex items-center gap-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-tr-lg">
+    <i class="fa-solid fa-won-sign"></i> 연료원별 정산단가
+  </button>
 </div>
 
+<!-- ══ TAB 1 : 전력 수급 실적 ══ -->
+<div id="panel-supply" class="tab-panel show space-y-5">
+  <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg flex items-start gap-3">
+    <i class="fa-solid fa-circle-info text-amber-500 mt-1"></i>
+    <div><h3 class="font-bold text-amber-900">실시간 대시보드 활성화</h3>
+      <p class="text-sm text-amber-700 mt-1"><b>HOME_전력수급_전력수급실적.csv</b> 데이터가 내장되어 자동 시각화됩니다.</p></div>
+  </div>
+  <div id="loadingScreen" class="text-center py-8">
+    <i class="fa-solid fa-circle-notch fa-spin text-3xl text-amber-400 mb-2"></i>
+    <p class="text-slate-500 font-bold">데이터 렌더링 중...</p>
+  </div>
+  <div id="supplyDash" class="hidden space-y-5 fade">
+    <div class="flex justify-between items-end border-b border-slate-200 pb-2">
+      <h2 class="text-lg font-bold text-slate-800" id="supplyPeriod">분석 기간: -</h2>
+      <span class="text-sm text-slate-500" id="dataCount"></span>
+    </div>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-rose-500 relative overflow-hidden">
+        <p class="text-xs text-slate-500 font-medium">최근 최대전력 (Peak)</p>
+        <p class="text-2xl font-bold text-slate-800 mt-1"><span id="s-maxP">0</span><span class="text-sm font-normal text-slate-400 ml-1">MW</span></p>
+        <p class="text-xs text-slate-400 mt-1" id="s-maxD"></p>
+        <i class="fa-solid fa-fire absolute -bottom-3 -right-3 text-5xl text-rose-50 opacity-50"></i>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500 relative overflow-hidden">
+        <p class="text-xs text-slate-500 font-medium">최근 공급능력</p>
+        <p class="text-2xl font-bold text-slate-800 mt-1"><span id="s-sup">0</span><span class="text-sm font-normal text-slate-400 ml-1">MW</span></p>
+        <p class="text-xs text-slate-400 mt-1" id="s-supD"></p>
+        <i class="fa-solid fa-industry absolute -bottom-3 -right-3 text-5xl text-blue-50 opacity-50"></i>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500 relative overflow-hidden">
+        <p class="text-xs text-slate-500 font-medium">최근 공급예비율</p>
+        <p class="text-2xl font-bold text-slate-800 mt-1"><span id="s-rr">0</span><span class="text-sm font-normal text-slate-400 ml-1">%</span></p>
+        <p class="text-xs mt-1" id="s-rrStatus"></p>
+        <i class="fa-solid fa-leaf absolute -bottom-3 -right-3 text-5xl text-emerald-50 opacity-50"></i>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-purple-500 bg-purple-50/30 relative overflow-hidden">
+        <p class="text-xs text-purple-700 font-bold">기간 내 역대 최고 수요</p>
+        <p class="text-2xl font-extrabold text-purple-900 mt-1"><span id="s-histMax">0</span><span class="text-sm font-normal text-purple-500 ml-1">MW</span></p>
+        <p class="text-xs text-purple-400 mt-1" id="s-histDate"></p>
+        <i class="fa-solid fa-crown absolute -bottom-3 -right-3 text-5xl text-purple-100 opacity-50"></i>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+      <h3 class="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-chart-line text-blue-500"></i> 전력 수급 추이 (공급능력 vs 최대전력)
+      </h3>
+      <div style="height:300px"><canvas id="powerTrendChart"></canvas></div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+      <h3 class="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-shield-cat text-emerald-500"></i> 공급예비력 및 예비율 추이
+      </h3>
+      <div style="height:260px"><canvas id="reserveTrendChart"></canvas></div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+      <h3 class="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-table text-slate-500"></i> 상세 데이터 (최근 날짜순)
+      </h3>
+      <div style="max-height:280px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px">
+        <table class="min-w-full text-sm text-left">
+          <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0">
+            <tr>
+              <th class="px-4 py-2">날짜</th><th class="px-4 py-2 text-right">설비(MW)</th>
+              <th class="px-4 py-2 text-right">공급능력(MW)</th><th class="px-4 py-2 text-right text-rose-600">최대전력(MW)</th>
+              <th class="px-4 py-2 text-right">최소전력(MW)</th><th class="px-4 py-2 text-right text-emerald-600">예비력(MW)</th>
+              <th class="px-4 py-2 text-right text-emerald-600">예비율(%)</th>
+            </tr>
+          </thead>
+          <tbody id="supplyTbody" class="divide-y divide-slate-100 bg-white"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 2 : 연료원별 정산단가 ══ -->
+<div id="panel-price" class="tab-panel space-y-5">
+  <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-r-lg flex items-start gap-3">
+    <i class="fa-solid fa-circle-info text-indigo-500 mt-1"></i>
+    <div><h3 class="font-bold text-indigo-900">데이터 소스 연동 완료</h3>
+      <p class="text-sm text-indigo-700 mt-1"><b>HOME_전력거래_정산단가_연료원별.csv</b> 최신 수치 기반 대시보드입니다. (단위: 원/kWh)</p></div>
+  </div>
+  <div class="flex justify-between items-end border-b border-slate-200 pb-2">
+    <h2 class="text-lg font-bold text-slate-800" id="pricePeriod">데이터 기간: 로딩중...</h2>
+  </div>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-800 relative overflow-hidden">
+      <div class="flex justify-between items-start"><p class="text-xs text-slate-500 font-bold">최근 평균 정산단가</p><i class="fa-solid fa-calculator text-slate-300"></i></div>
+      <p class="text-2xl font-extrabold text-slate-800 mt-2"><span id="p-total">0</span><span class="text-sm font-normal text-slate-400 ml-1">원/kWh</span></p>
+      <p class="text-xs text-slate-400 mt-1" id="p-d1"></p>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-amber-500 relative overflow-hidden">
+      <div class="flex justify-between items-start"><p class="text-xs text-slate-500 font-bold">원자력 정산단가</p><i class="fa-solid fa-atom text-amber-300"></i></div>
+      <p class="text-2xl font-extrabold text-amber-600 mt-2"><span id="p-nuc">0</span><span class="text-sm font-normal text-slate-400 ml-1">원/kWh</span></p>
+      <p class="text-xs text-slate-400 mt-1" id="p-d2"></p>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-blue-500 relative overflow-hidden">
+      <div class="flex justify-between items-start"><p class="text-xs text-slate-500 font-bold">LNG 정산단가</p><i class="fa-solid fa-fire-flame-simple text-blue-300"></i></div>
+      <p class="text-2xl font-extrabold text-blue-600 mt-2"><span id="p-lng">0</span><span class="text-sm font-normal text-slate-400 ml-1">원/kWh</span></p>
+      <p class="text-xs text-slate-400 mt-1" id="p-d3"></p>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-emerald-500 relative overflow-hidden">
+      <div class="flex justify-between items-start"><p class="text-xs text-slate-500 font-bold">신재생(합계) 정산단가</p><i class="fa-solid fa-leaf text-emerald-300"></i></div>
+      <p class="text-2xl font-extrabold text-emerald-600 mt-2"><span id="p-re">0</span><span class="text-sm font-normal text-slate-400 ml-1">원/kWh</span></p>
+      <p class="text-xs text-slate-400 mt-1" id="p-d4"></p>
+    </div>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+    <h3 class="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
+      <i class="fa-solid fa-chart-line text-indigo-500"></i> 주요 에너지원별 정산단가 시계열 추이
+    </h3>
+    <div style="height:280px"><canvas id="trendChart"></canvas></div>
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+      <h3 class="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-chart-bar text-slate-500"></i> 최근 월 연료원별 단가 비교
+      </h3>
+      <div style="height:240px"><canvas id="barChart"></canvas></div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+      <h3 class="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-solar-panel text-emerald-500"></i> 최근 월 신재생에너지 세부 단가
+      </h3>
+      <div style="height:240px" class="flex justify-center"><canvas id="radarChart"></canvas></div>
+    </div>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+    <h3 class="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
+      <i class="fa-solid fa-table text-slate-500"></i> 전체 세부 데이터 (최근 월 순)
+    </h3>
+    <div style="max-height:280px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px">
+      <table class="min-w-full text-sm text-left">
+        <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0">
+          <tr>
+            <th class="px-4 py-2 bg-slate-100">기간</th><th class="px-4 py-2 bg-slate-100 text-right">합계평균</th>
+            <th class="px-4 py-2 bg-amber-50 text-right">원자력</th><th class="px-4 py-2 bg-slate-200 text-right">석탄</th>
+            <th class="px-4 py-2 bg-blue-50 text-right">LNG</th><th class="px-4 py-2 bg-emerald-50 text-right">신재생</th>
+            <th class="px-4 py-2 bg-emerald-50 text-right">태양광</th><th class="px-4 py-2 bg-emerald-50 text-right">풍력</th>
+            <th class="px-4 py-2 bg-emerald-50 text-right">수력</th>
+          </tr>
+        </thead>
+        <tbody id="priceTbody" class="divide-y divide-slate-100 bg-white"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrapper -->
 <script>
-    const embeddedCsvData = `기간,원자력,석탄,,,유류,LNG,양수,신재생,,,,,,,,,기타,합계
+// ── 탭 전환 ──────────────────────────────────
+function switchTab(t) {
+  ['supply','price'].forEach(id => {
+    document.getElementById('panel-'+id).classList.remove('show');
+    const b = document.getElementById('btn-'+id);
+    b.classList.remove('active-supply','active-price');
+    b.classList.add('text-slate-400');
+  });
+  document.getElementById('panel-'+t).classList.add('show','fade');
+  const ab = document.getElementById('btn-'+t);
+  ab.classList.remove('text-slate-400');
+  ab.classList.add(t==='supply'?'active-supply':'active-price');
+}
+
+// ── TAB 1 : 전력 수급 실적 ───────────────────
+const supplyCsv = `년,월,일,설비용량(MW),공급능력(MW),최대전력(MW),최소전력(MW),공급예비력(MW),공급예비율(%),최대전력기준일시,최소전력기준일시
+2026,04,04,158286,80984,60097,"47,964",20887,34.8,2026/04/04(20:00),2026/04/04(13:00)
+2026,04,03,158286,83542,66751,"51,469",16791,25.2,2026/04/03(20:00),2026/04/03(13:00)
+2026,04,02,158286,84464,68564,"48,190",15900,23.2,2026/04/02(20:00),2026/04/02(13:00)
+2026,04,01,158286,84186,69042,"54,387",15144,21.9,2026/04/01(20:00),2026/04/01(13:00)
+2026,03,29,158279,79005,58828,"38,669",20177,34.3,2026/03/29(20:00),2026/03/29(13:00)
+2026,03,28,158279,81846,59511,"39,508",22335,37.5,2026/03/28(20:00),2026/03/28(13:00)
+2026,03,27,158279,86943,66681,"50,324",20262,30.4,2026/03/27(20:00),2026/03/27(13:00)
+2026,03,26,158279,82756,68785,"49,640",13971,20.3,2026/03/26(20:00),2026/03/26(13:00)
+2026,01,18,157041,89495,64095,"48,844",25400,39.6,2026/01/18(19:00),2026/01/18(14:00)
+2026,01,17,157041,94901,67604,"52,524",27297,40.4,2026/01/17(19:00),2026/01/17(13:00)
+2026,01,16,157041,97649,80699,"61,089",16950,21,2026/01/16(10:00),2026/01/16(04:00)
+2026,01,15,157041,100678,81575,"61,449",19103,23.4,2026/01/15(10:00),2026/01/15(04:00)
+2026,01,14,156624,101498,85544,"65,005",15954,18.7,2026/01/14(09:00),2026/01/14(04:00)`;
+
+let powerData=[], chartPT=null, chartPR=null;
+const pN = v=>parseFloat(String(v||0).replace(/,/g,'').replace(/"/g,''))||0;
+const fN = n=>Number(n).toLocaleString();
+const fD = (y,m,d)=>`${String(y).trim()}-${String(m).trim().padStart(2,'0')}-${String(d).trim().padStart(2,'0')}`;
+
+Papa.parse(supplyCsv,{header:true,skipEmptyLines:true,complete:function(r){
+  const rows=r.data; if(!rows.length) return;
+  const ks=Object.keys(rows[0]), fk=kw=>ks.find(k=>k.includes(kw));
+  const kY=fk('년'),kM=fk('월'),kD=fk('일');
+  const kInst=fk('설비'),kSup=fk('공급능력'),kMax=fk('최대전력(MW)')||fk('최대전력');
+  const kMin=fk('최소전력(MW)')||fk('최소전력'),kRP=fk('공급예비력'),kRR=fk('공급예비율');
+  rows.forEach(r=>{
+    const item={date:fD(r[kY],r[kM],r[kD]),installedCap:pN(r[kInst]),supplyCap:pN(r[kSup]),
+      maxPower:pN(r[kMax]),minPower:pN(r[kMin]),reservePower:pN(r[kRP]),reserveRatio:pN(r[kRR])};
+    if(item.maxPower>0) powerData.push(item);
+  });
+  powerData.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  setTimeout(initSupply,300);
+}});
+
+function initSupply(){
+  document.getElementById('loadingScreen').classList.add('hidden');
+  document.getElementById('supplyDash').classList.remove('hidden');
+  const last=powerData[powerData.length-1], first=powerData[0];
+  document.getElementById('supplyPeriod').innerText=`분석 기간: ${first.date} ~ ${last.date}`;
+  document.getElementById('dataCount').innerText=`총 ${fN(powerData.length)}일 데이터`;
+  document.getElementById('s-maxP').innerText=fN(last.maxPower);
+  document.getElementById('s-maxD').innerText=`${last.date} 기준`;
+  document.getElementById('s-sup').innerText=fN(last.supplyCap);
+  document.getElementById('s-supD').innerText=`${last.date} 기준`;
+  document.getElementById('s-rr').innerText=last.reserveRatio.toFixed(1);
+  const rEl=document.getElementById('s-rrStatus');
+  rEl.innerHTML=last.reserveRatio>=10?'<span class="text-emerald-600 font-bold">안정</span> (10% 이상)':
+    last.reserveRatio>=5?'<span class="text-amber-500 font-bold">주의</span> (5~10%)':
+    '<span class="text-rose-500 font-bold">위험</span> (5% 미만)';
+  const mx=powerData.reduce((a,b)=>b.maxPower>a.maxPower?b:a);
+  document.getElementById('s-histMax').innerText=fN(mx.maxPower);
+  document.getElementById('s-histDate').innerText=`${mx.date} 달성`;
+  const lbs=powerData.map(d=>d.date);
+  chartPT=new Chart(document.getElementById('powerTrendChart'),{type:'line',
+    data:{labels:lbs,datasets:[
+      {label:'공급능력(MW)',data:powerData.map(d=>d.supplyCap),borderColor:'#3b82f6',borderWidth:2,pointRadius:0,tension:0.1},
+      {label:'최대전력(MW)',data:powerData.map(d=>d.maxPower),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',borderWidth:2,pointRadius:0,fill:true,tension:0.1},
+      {label:'설비용량(MW)',data:powerData.map(d=>d.installedCap),borderColor:'#94a3b8',borderDash:[5,5],borderWidth:1.5,pointRadius:0,hidden:true}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fN(c.parsed.y)}`}}},
+      scales:{x:{grid:{display:false}},y:{title:{display:true,text:'전력 (MW)'},min:0}}}});
+  chartPR=new Chart(document.getElementById('reserveTrendChart'),{type:'bar',
+    data:{labels:lbs,datasets:[
+      {type:'line',label:'공급예비율(%)',data:powerData.map(d=>d.reserveRatio),borderColor:'#10b981',borderWidth:2,pointRadius:0,yAxisID:'y1',tension:0.2},
+      {type:'bar',label:'공급예비력(MW)',data:powerData.map(d=>d.reservePower),backgroundColor:'rgba(16,185,129,.2)',borderColor:'rgba(16,185,129,.5)',yAxisID:'y'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      scales:{x:{grid:{display:false}},y:{position:'left',title:{display:true,text:'예비력(MW)'},min:0},
+        y1:{position:'right',title:{display:true,text:'예비율(%)'},min:0,grid:{drawOnChartArea:false}}}}});
+  const tb=document.getElementById('supplyTbody');
+  [...powerData].reverse().forEach(d=>{
+    const tr=document.createElement('tr'); tr.className='hover:bg-slate-50 transition-colors';
+    const rc=d.reserveRatio<10?'text-rose-600 font-bold':'text-emerald-600';
+    tr.innerHTML=`<td class="px-4 py-2 font-medium text-slate-700 whitespace-nowrap">${d.date}</td>
+      <td class="px-4 py-2 text-right text-slate-400">${fN(d.installedCap)}</td>
+      <td class="px-4 py-2 text-right font-medium text-blue-700">${fN(d.supplyCap)}</td>
+      <td class="px-4 py-2 text-right font-bold text-rose-600">${fN(d.maxPower)}</td>
+      <td class="px-4 py-2 text-right text-slate-400">${fN(d.minPower)}</td>
+      <td class="px-4 py-2 text-right text-slate-600">${fN(d.reservePower)}</td>
+      <td class="px-4 py-2 text-right ${rc}">${d.reserveRatio.toFixed(1)}%</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ── TAB 2 : 연료원별 정산단가 ────────────────
+const priceCsv=`기간,원자력,석탄,,,유류,LNG,양수,신재생,,,,,,,,,기타,합계
 ,,유연탄,무연탄,계,,,,연료전지,석탄가스화,태양,풍력,수력,해양,바이오,폐기물,계,,
 2026/02,92.40,133.25,225.01,133.36,532.08,152.31,199.20,106.58,0,101.27,106.31,125.95,0,147.21,0,115.81,137.44,127.59
 2026/01,90.78,127.40,0,127.54,498.74,151.75,228.68,101.88,0,96.77,105.10,120.10,0,140.20,0,110.10,130.40,120.10
@@ -629,115 +784,68 @@ power_prices_html = """
 2025/04,65.10,100.40,0,100.50,350.70,125.70,170.60,80.80,0,75.70,80.10,90.10,0,115.20,0,85.10,105.40,95.10
 2025/03,60.10,95.40,0,95.50,320.70,120.70,160.60,75.80,0,70.70,75.10,85.10,0,110.20,0,80.10,100.40,90.10`;
 
-    let parsedData = [];
-
-    const parseNum = (val) => { const n = parseFloat(val); return isNaN(n) ? 0 : n; };
-
-    function processData() {
-        const rows = embeddedCsvData.trim().split('\\n');
-        for (let i = 2; i < rows.length; i++) {
-            const cols = rows[i].split(',');
-            if (cols.length < 18) continue;
-            parsedData.push({
-                period: cols[0], nuclear: parseNum(cols[1]), coal: parseNum(cols[4]),
-                oil: parseNum(cols[5]), lng: parseNum(cols[6]), pumped: parseNum(cols[7]),
-                solar: parseNum(cols[10]), wind: parseNum(cols[11]), hydro: parseNum(cols[12]),
-                renewable: parseNum(cols[16]), total: parseNum(cols[18])
-            });
-        }
-        parsedData.sort((a, b) => a.period.localeCompare(b.period));
-        updateDashboard();
-    }
-
-    function updateDashboard() {
-        if (!parsedData.length) return;
-        const latest = parsedData[parsedData.length - 1];
-        const first  = parsedData[0];
-        document.getElementById('dataPeriodRange').innerText = `분석 기간: ${first.period} ~ ${latest.period}`;
-        const fmt = v => v.toFixed(2);
-        document.getElementById('latestTotalAvg').innerText  = fmt(latest.total);
-        document.getElementById('latestNuclear').innerText   = fmt(latest.nuclear);
-        document.getElementById('latestLNG').innerText       = fmt(latest.lng);
-        document.getElementById('latestRenewable').innerText = fmt(latest.renewable);
-        ['latestDate1','latestDate2','latestDate3','latestDate4'].forEach(id => {
-            document.getElementById(id).innerText = latest.period + ' 기준';
-        });
-        renderCharts();
-        renderTable();
-    }
-
-    function renderCharts() {
-        const labels = parsedData.map(d => d.period);
-        const latest = parsedData[parsedData.length - 1];
-
-        new Chart(document.getElementById('trendChart').getContext('2d'), {
-            type: 'line',
-            data: { labels, datasets: [
-                { label: '합계(평균)', data: parsedData.map(d => d.total),     borderColor: '#0f172a', borderDash:[5,5], borderWidth:3, tension:0.1, pointRadius:2 },
-                { label: '원자력',    data: parsedData.map(d => d.nuclear),   borderColor: '#f59e0b', borderWidth:2, tension:0.1, pointRadius:2 },
-                { label: '석탄',      data: parsedData.map(d => d.coal),      borderColor: '#64748b', borderWidth:2, tension:0.1, pointRadius:2 },
-                { label: 'LNG',       data: parsedData.map(d => d.lng),       borderColor: '#3b82f6', borderWidth:2, tension:0.1, pointRadius:2 },
-                { label: '신재생(계)',data: parsedData.map(d => d.renewable), borderColor: '#10b981', borderWidth:2, tension:0.1, pointRadius:2 }
-            ]},
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: { tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} 원` } } },
-                scales: { y: { title: { display: true, text: '단가 (원/kWh)' } } }
-            }
-        });
-
-        new Chart(document.getElementById('barChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: ['원자력','석탄','LNG','신재생(합계)','유류','양수'],
-                datasets: [{ label: latest.period + ' 정산단가',
-                    data: [latest.nuclear, latest.coal, latest.lng, latest.renewable, latest.oil, latest.pumped],
-                    backgroundColor: ['#f59e0b','#64748b','#3b82f6','#10b981','#a855f7','#ec4899'],
-                    borderRadius: 6 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-        });
-
-        new Chart(document.getElementById('radarChart').getContext('2d'), {
-            type: 'radar',
-            data: {
-                labels: ['태양광','풍력','수력','평균 신재생'],
-                datasets: [{ label: '신재생 세부 (' + latest.period + ')',
-                    data: [latest.solar, latest.wind, latest.hydro, latest.renewable],
-                    backgroundColor: 'rgba(16,185,129,0.2)', borderColor: '#10b981',
-                    pointBackgroundColor: '#047857', borderWidth: 2 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, scales: { r: { beginAtZero: true, ticks: { stepSize: 20 } } } }
-        });
-    }
-
-    function renderTable() {
-        const tbody = document.getElementById('dataTableBody');
-        [...parsedData].reverse().forEach(d => {
-            const tr = document.createElement('tr');
-            tr.className = 'hover:bg-indigo-50 transition-colors border-b border-slate-100';
-            tr.innerHTML = `
-                <td class="px-4 py-3 font-bold text-slate-800 whitespace-nowrap bg-slate-50">${d.period}</td>
-                <td class="px-4 py-3 text-right font-extrabold text-indigo-700 bg-slate-50">${d.total.toFixed(2)}</td>
-                <td class="px-4 py-3 text-right font-medium text-amber-600">${d.nuclear.toFixed(2)}</td>
-                <td class="px-4 py-3 text-right text-slate-600">${d.coal.toFixed(2)}</td>
-                <td class="px-4 py-3 text-right font-medium text-blue-600">${d.lng.toFixed(2)}</td>
-                <td class="px-4 py-3 text-right font-bold text-emerald-600">${d.renewable.toFixed(2)}</td>
-                <td class="px-4 py-3 text-right text-slate-500">${d.solar.toFixed(2)}</td>
-                <td class="px-4 py-3 text-right text-slate-500">${d.wind.toFixed(2)}</td>
-                <td class="px-4 py-3 text-right text-slate-500">${d.hydro.toFixed(2)}</td>`;
-            tbody.appendChild(tr);
-        });
-    }
-
-    window.onload = () => processData();
+let priceData=[];
+const qN=v=>{const n=parseFloat(v);return isNaN(n)?0:n;};
+(function initPrice(){
+  const rows=priceCsv.trim().split('\\n');
+  for(let i=2;i<rows.length;i++){
+    const c=rows[i].split(','); if(c.length<18) continue;
+    priceData.push({period:c[0],nuclear:qN(c[1]),coal:qN(c[4]),oil:qN(c[5]),lng:qN(c[6]),
+      pumped:qN(c[7]),solar:qN(c[10]),wind:qN(c[11]),hydro:qN(c[12]),renewable:qN(c[16]),total:qN(c[18])});
+  }
+  priceData.sort((a,b)=>a.period.localeCompare(b.period));
+  const lt=priceData[priceData.length-1], ft=priceData[0];
+  document.getElementById('pricePeriod').innerText=`분석 기간: ${ft.period} ~ ${lt.period}`;
+  const fm=v=>v.toFixed(2);
+  document.getElementById('p-total').innerText=fm(lt.total);
+  document.getElementById('p-nuc').innerText=fm(lt.nuclear);
+  document.getElementById('p-lng').innerText=fm(lt.lng);
+  document.getElementById('p-re').innerText=fm(lt.renewable);
+  ['p-d1','p-d2','p-d3','p-d4'].forEach(id=>document.getElementById(id).innerText=lt.period+' 기준');
+  const lbs=priceData.map(d=>d.period);
+  new Chart(document.getElementById('trendChart'),{type:'line',
+    data:{labels:lbs,datasets:[
+      {label:'합계(평균)',data:priceData.map(d=>d.total),borderColor:'#0f172a',borderDash:[5,5],borderWidth:3,tension:0.1,pointRadius:2},
+      {label:'원자력',data:priceData.map(d=>d.nuclear),borderColor:'#f59e0b',borderWidth:2,tension:0.1,pointRadius:2},
+      {label:'석탄',data:priceData.map(d=>d.coal),borderColor:'#64748b',borderWidth:2,tension:0.1,pointRadius:2},
+      {label:'LNG',data:priceData.map(d=>d.lng),borderColor:'#3b82f6',borderWidth:2,tension:0.1,pointRadius:2},
+      {label:'신재생(계)',data:priceData.map(d=>d.renewable),borderColor:'#10b981',borderWidth:2,tension:0.1,pointRadius:2}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(2)} 원`}}},
+      scales:{y:{title:{display:true,text:'단가 (원/kWh)'}}}}});
+  new Chart(document.getElementById('barChart'),{type:'bar',
+    data:{labels:['원자력','석탄','LNG','신재생','유류','양수'],
+      datasets:[{label:lt.period+' 정산단가',
+        data:[lt.nuclear,lt.coal,lt.lng,lt.renewable,lt.oil,lt.pumped],
+        backgroundColor:['#f59e0b','#64748b','#3b82f6','#10b981','#a855f7','#ec4899'],borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+  new Chart(document.getElementById('radarChart'),{type:'radar',
+    data:{labels:['태양광','풍력','수력','신재생평균'],
+      datasets:[{label:'신재생 세부 ('+lt.period+')',
+        data:[lt.solar,lt.wind,lt.hydro,lt.renewable],
+        backgroundColor:'rgba(16,185,129,.2)',borderColor:'#10b981',pointBackgroundColor:'#047857',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{r:{beginAtZero:true,ticks:{stepSize:20}}}}});
+  const tb=document.getElementById('priceTbody');
+  [...priceData].reverse().forEach(d=>{
+    const tr=document.createElement('tr'); tr.className='hover:bg-indigo-50 transition-colors border-b border-slate-100';
+    tr.innerHTML=`<td class="px-4 py-2 font-bold text-slate-800 whitespace-nowrap bg-slate-50">${d.period}</td>
+      <td class="px-4 py-2 text-right font-extrabold text-indigo-700 bg-slate-50">${d.total.toFixed(2)}</td>
+      <td class="px-4 py-2 text-right font-medium text-amber-600">${d.nuclear.toFixed(2)}</td>
+      <td class="px-4 py-2 text-right text-slate-600">${d.coal.toFixed(2)}</td>
+      <td class="px-4 py-2 text-right font-medium text-blue-600">${d.lng.toFixed(2)}</td>
+      <td class="px-4 py-2 text-right font-bold text-emerald-600">${d.renewable.toFixed(2)}</td>
+      <td class="px-4 py-2 text-right text-slate-500">${d.solar.toFixed(2)}</td>
+      <td class="px-4 py-2 text-right text-slate-500">${d.wind.toFixed(2)}</td>
+      <td class="px-4 py-2 text-right text-slate-500">${d.hydro.toFixed(2)}</td>`;
+    tb.appendChild(tr);
+  });
+})();
 </script>
 </body>
-</html>
-"""
+</html>"""
 
-components.html(power_prices_html, height=1400, scrolling=False)
+components.html(_TAB_HTML, height=1550, scrolling=False)
 
 # ─────────────────────────────────────────────
 # 11. 푸터 + 자동 새로고침
@@ -749,7 +857,6 @@ st.markdown(
     "</div>",
     unsafe_allow_html=True,
 )
-# 15분 자동 새로고침 (Streamlit Cloud 호환)
 try:
     from streamlit_autorefresh import st_autorefresh
     st_autorefresh(interval=900_000, key="autorefresh")
