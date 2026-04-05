@@ -331,9 +331,9 @@ tradingview_widget = """
   // JSON 데이터를 문자열로 변환하여 스크립트 내부에 삽입
   script.innerHTML = JSON.stringify({
     "symbols": [
-      { "proName": "BLACKBULL:WTI", "title": "WTI" },
       { "proName": "FX_IDC:USDKRW", "title": "USD to KRW" },
-      { "proName": "VANTAGE:NG", "title": "NG" },
+      { "proName": "BLACKBULL:WTI", "title": "WTI" },
+      { "proName": "VANTAGE:NG", "title": "Natural Gas" },
       { "proName": "CAPITALCOM:COPPER", "title": "Copper" },
       { "proName": "NCDEX:STEEL", "title": "Steel" }
     ],
