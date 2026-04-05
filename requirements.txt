@@ -3,4 +3,3 @@ requests
 pandas
 plotly
 streamlit-autorefresh
-streamlit.components.v1
