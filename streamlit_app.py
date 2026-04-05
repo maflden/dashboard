@@ -352,7 +352,7 @@ st.html(tradingview_widget, unsafe_allow_javascript=True)
 # ─────────────────────────────────────────────
 # KOSPI 및 환율 (Yahoo Finance)
 # ─────────────────────────────────────────────
-@st.cache_data(ttl=300)  # 5분(300초)마다 데이터 갱신
+@st.cache_data(ttl=300)  # 5분마다 데이터 갱신
 def fetch_market_data():
     try:
         # KOSPI 지수 (^KS11)
@@ -367,20 +367,29 @@ def fetch_market_data():
         krw_prev = usdkrw['Close'].iloc[-2] if len(usdkrw) > 1 else krw_current
         krw_change = krw_current - krw_prev
         
+        # 현재 업데이트 시간 기록
+        update_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
         return {
             "KOSPI": {"value": kospi_current, "change": kospi_change},
-            "USDKRW": {"value": krw_current, "change": krw_change}
+            "USDKRW": {"value": krw_current, "change": krw_change},
+            "time": update_time
         }
     except Exception as e:
         return None
 
 market_data = fetch_market_data()
 
-# Streamlit의 st.metric을 사용하여 깔끔한 박스 형태로 출력
+# 지표 출력 부분
 if market_data:
-    st.markdown("<div style='color: #63B3ED; font-weight: bold; margin-bottom: 10px; font-size: 15px;'>📈 주요 금융 지표</div>", unsafe_allow_html=True)
+    # 제목과 시간을 한 줄에 배치 (Flexbox 사용)
+    st.markdown(f"""
+        <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;'>
+            <div style='color: #63B3ED; font-weight: bold; font-size: 15px;'>📈 주요 금융 지표</div>
+            <div style='color: #718096; font-size: 12px;'>조회 기준: {market_data['time']}</div>
+        </div>
+    """, unsafe_allow_html=True)
     
-    # 3개의 열을 만들어 좌측 2개에 지표 배치 (우측은 여백)
     col1, col2, col3 = st.columns([1, 1, 2])
     
     with col1:
@@ -390,8 +399,6 @@ if market_data:
             delta=f"{market_data['KOSPI']['change']:,.2f}"
         )
     with col2:
-        # 환율은 숫자가 작아지면 좋은 것(원화 가치 상승)이므로 delta_color를 'inverse'로 설정할 수도 있습니다.
-        # 여기서는 일반적인 증시 표기법(상승=초록/빨강)을 따릅니다.
         st.metric(
             label="USD/KRW", 
             value=f"{market_data['USDKRW']['value']:,.2f} 원", 
@@ -399,7 +406,7 @@ if market_data:
         )
     
     st.markdown("<hr style='border: 1px solid #2D3748; margin-top: 10px; margin-bottom: 20px;'>", unsafe_allow_html=True)
-
+    
 # ─────────────────────────────────────────────
 # 구글 뉴스 RSS 실시간 파싱 및 표시
 # ─────────────────────────────────────────────
