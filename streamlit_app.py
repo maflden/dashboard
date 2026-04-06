@@ -558,9 +558,9 @@ with pwr_cols[2]:
 # 10. 전력 수급 실적 & 연료원별 정산단가 (탭)
 # ─────────────────────────────────────────────
 st.markdown("<div class='section-title'>전력 수급 실적 &amp; 연료원별 정산단가</div>", unsafe_allow_html=True)
-
+ 
 import streamlit.components.v1 as components
-
+ 
 _TAB_HTML = """<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -577,6 +577,7 @@ _TAB_HTML = """<!DOCTYPE html>
   .tab-btn{transition:all .2s;border-bottom:3px solid transparent;cursor:pointer}
   .tab-btn.active-supply{border-bottom-color:#d97706;color:#92400e;background:#fffbeb}
   .tab-btn.active-price{border-bottom-color:#4f46e5;color:#3730a3;background:#eef2ff}
+  .tab-btn.active-trade{border-bottom-color:#0056b3;color:#003366;background:#f0f6ff}
   .tab-panel{display:none}
   .tab-panel.show{display:block}
   .fade{animation:fd .3s ease}
@@ -585,7 +586,7 @@ _TAB_HTML = """<!DOCTYPE html>
 </head>
 <body class="text-slate-800 font-sans">
 <div class="py-2">
-
+ 
 <!-- 탭 버튼 -->
 <div class="flex gap-0 border-b border-slate-200 mb-6">
   <button id="btn-supply" onclick="switchTab('supply')"
@@ -593,11 +594,15 @@ _TAB_HTML = """<!DOCTYPE html>
     <i class="fa-solid fa-bolt text-amber-500"></i> 전력 수급 실적
   </button>
   <button id="btn-price" onclick="switchTab('price')"
-    class="tab-btn px-6 py-3 font-bold text-sm flex items-center gap-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-tr-lg">
+    class="tab-btn px-6 py-3 font-bold text-sm flex items-center gap-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">
     <i class="fa-solid fa-won-sign"></i> 연료원별 정산단가
   </button>
+  <button id="btn-trade" onclick="switchTab('trade')"
+    class="tab-btn px-6 py-3 font-bold text-sm flex items-center gap-2 text-slate-400 hover:text-blue-700 hover:bg-blue-50 rounded-tr-lg">
+    <i class="fa-solid fa-ship"></i> 수출입 동향
+  </button>
 </div>
-
+ 
 <!-- ══ TAB 1 : 전력 수급 실적 ══ -->
 <div id="panel-supply" class="tab-panel show space-y-5">
   <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg flex items-start gap-3">
@@ -672,7 +677,7 @@ _TAB_HTML = """<!DOCTYPE html>
     </div>
   </div>
 </div>
-
+ 
 <!-- ══ TAB 2 : 연료원별 정산단가 ══ -->
 <div id="panel-price" class="tab-panel space-y-5">
   <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-r-lg flex items-start gap-3">
@@ -745,8 +750,110 @@ _TAB_HTML = """<!DOCTYPE html>
     </div>
   </div>
 </div>
-
-
+ 
+</div><!-- /wrapper -->
+<script>
+// ── 탭 전환 ──────────────────────────────────
+function switchTab(t) {
+  ['supply','price','trade'].forEach(id => {
+    document.getElementById('panel-'+id).classList.remove('show');
+    const b = document.getElementById('btn-'+id);
+    b.classList.remove('active-supply','active-price','active-trade');
+    b.classList.add('text-slate-400');
+  });
+  document.getElementById('panel-'+t).classList.add('show','fade');
+  const ab = document.getElementById('btn-'+t);
+  ab.classList.remove('text-slate-400');
+  ab.classList.add(t==='supply'?'active-supply':t==='price'?'active-price':'active-trade');
+}
+ 
+// ── TAB 1 : 전력 수급 실적 ───────────────────
+const supplyCsv = `년,월,일,설비용량(MW),공급능력(MW),최대전력(MW),최소전력(MW),공급예비력(MW),공급예비율(%),최대전력기준일시,최소전력기준일시
+2026,04,04,158286,80984,60097,"47,964",20887,34.8,2026/04/04(20:00),2026/04/04(13:00)
+2026,04,03,158286,83542,66751,"51,469",16791,25.2,2026/04/03(20:00),2026/04/03(13:00)
+2026,04,02,158286,84464,68564,"48,190",15900,23.2,2026/04/02(20:00),2026/04/02(13:00)
+2026,04,01,158286,84186,69042,"54,387",15144,21.9,2026/04/01(20:00),2026/04/01(13:00)
+2026,03,29,158279,79005,58828,"38,669",20177,34.3,2026/03/29(20:00),2026/03/29(13:00)
+2026,03,28,158279,81846,59511,"39,508",22335,37.5,2026/03/28(20:00),2026/03/28(13:00)
+2026,03,27,158279,86943,66681,"50,324",20262,30.4,2026/03/27(20:00),2026/03/27(13:00)
+2026,03,26,158279,82756,68785,"49,640",13971,20.3,2026/03/26(20:00),2026/03/26(13:00)
+2026,01,18,157041,89495,64095,"48,844",25400,39.6,2026/01/18(19:00),2026/01/18(14:00)
+2026,01,17,157041,94901,67604,"52,524",27297,40.4,2026/01/17(19:00),2026/01/17(13:00)
+2026,01,16,157041,97649,80699,"61,089",16950,21,2026/01/16(10:00),2026/01/16(04:00)
+2026,01,15,157041,100678,81575,"61,449",19103,23.4,2026/01/15(10:00),2026/01/15(04:00)
+2026,01,14,156624,101498,85544,"65,005",15954,18.7,2026/01/14(09:00),2026/01/14(04:00)`;
+ 
+let powerData=[], chartPT=null, chartPR=null;
+const pN = v=>parseFloat(String(v||0).replace(/,/g,'').replace(/"/g,''))||0;
+const fN = n=>Number(n).toLocaleString();
+const fD = (y,m,d)=>`${String(y).trim()}-${String(m).trim().padStart(2,'0')}-${String(d).trim().padStart(2,'0')}`;
+ 
+Papa.parse(supplyCsv,{header:true,skipEmptyLines:true,complete:function(r){
+  const rows=r.data; if(!rows.length) return;
+  const ks=Object.keys(rows[0]), fk=kw=>ks.find(k=>k.includes(kw));
+  const kY=fk('년'),kM=fk('월'),kD=fk('일');
+  const kInst=fk('설비'),kSup=fk('공급능력'),kMax=fk('최대전력(MW)')||fk('최대전력');
+  const kMin=fk('최소전력(MW)')||fk('최소전력'),kRP=fk('공급예비력'),kRR=fk('공급예비율');
+  rows.forEach(r=>{
+    const item={date:fD(r[kY],r[kM],r[kD]),installedCap:pN(r[kInst]),supplyCap:pN(r[kSup]),
+      maxPower:pN(r[kMax]),minPower:pN(r[kMin]),reservePower:pN(r[kRP]),reserveRatio:pN(r[kRR])};
+    if(item.maxPower>0) powerData.push(item);
+  });
+  powerData.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  setTimeout(initSupply,300);
+}});
+ 
+function initSupply(){
+  document.getElementById('loadingScreen').classList.add('hidden');
+  document.getElementById('supplyDash').classList.remove('hidden');
+  const last=powerData[powerData.length-1], first=powerData[0];
+  document.getElementById('supplyPeriod').innerText=`분석 기간: ${first.date} ~ ${last.date}`;
+  document.getElementById('dataCount').innerText=`총 ${fN(powerData.length)}일 데이터`;
+  document.getElementById('s-maxP').innerText=fN(last.maxPower);
+  document.getElementById('s-maxD').innerText=`${last.date} 기준`;
+  document.getElementById('s-sup').innerText=fN(last.supplyCap);
+  document.getElementById('s-supD').innerText=`${last.date} 기준`;
+  document.getElementById('s-rr').innerText=last.reserveRatio.toFixed(1);
+  const rEl=document.getElementById('s-rrStatus');
+  rEl.innerHTML=last.reserveRatio>=10?'<span class="text-emerald-600 font-bold">안정</span> (10% 이상)':
+    last.reserveRatio>=5?'<span class="text-amber-500 font-bold">주의</span> (5~10%)':
+    '<span class="text-rose-500 font-bold">위험</span> (5% 미만)';
+  const mx=powerData.reduce((a,b)=>b.maxPower>a.maxPower?b:a);
+  document.getElementById('s-histMax').innerText=fN(mx.maxPower);
+  document.getElementById('s-histDate').innerText=`${mx.date} 달성`;
+  const lbs=powerData.map(d=>d.date);
+  chartPT=new Chart(document.getElementById('powerTrendChart'),{type:'line',
+    data:{labels:lbs,datasets:[
+      {label:'공급능력(MW)',data:powerData.map(d=>d.supplyCap),borderColor:'#3b82f6',borderWidth:2,pointRadius:0,tension:0.1},
+      {label:'최대전력(MW)',data:powerData.map(d=>d.maxPower),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',borderWidth:2,pointRadius:0,fill:true,tension:0.1},
+      {label:'설비용량(MW)',data:powerData.map(d=>d.installedCap),borderColor:'#94a3b8',borderDash:[5,5],borderWidth:1.5,pointRadius:0,hidden:true}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fN(c.parsed.y)}`}}},
+      scales:{x:{grid:{display:false}},y:{title:{display:true,text:'전력 (MW)'},min:0}}}});
+  chartPR=new Chart(document.getElementById('reserveTrendChart'),{type:'bar',
+    data:{labels:lbs,datasets:[
+      {type:'line',label:'공급예비율(%)',data:powerData.map(d=>d.reserveRatio),borderColor:'#10b981',borderWidth:2,pointRadius:0,yAxisID:'y1',tension:0.2},
+      {type:'bar',label:'공급예비력(MW)',data:powerData.map(d=>d.reservePower),backgroundColor:'rgba(16,185,129,.2)',borderColor:'rgba(16,185,129,.5)',yAxisID:'y'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      scales:{x:{grid:{display:false}},y:{position:'left',title:{display:true,text:'예비력(MW)'},min:0},
+        y1:{position:'right',title:{display:true,text:'예비율(%)'},min:0,grid:{drawOnChartArea:false}}}}});
+  const tb=document.getElementById('supplyTbody');
+  [...powerData].reverse().forEach(d=>{
+    const tr=document.createElement('tr'); tr.className='hover:bg-slate-50 transition-colors';
+    const rc=d.reserveRatio<10?'text-rose-600 font-bold':'text-emerald-600';
+    tr.innerHTML=`<td class="px-4 py-2 font-medium text-slate-700 whitespace-nowrap">${d.date}</td>
+      <td class="px-4 py-2 text-right text-slate-400">${fN(d.installedCap)}</td>
+      <td class="px-4 py-2 text-right font-medium text-blue-700">${fN(d.supplyCap)}</td>
+      <td class="px-4 py-2 text-right font-bold text-rose-600">${fN(d.maxPower)}</td>
+      <td class="px-4 py-2 text-right text-slate-400">${fN(d.minPower)}</td>
+      <td class="px-4 py-2 text-right text-slate-600">${fN(d.reservePower)}</td>
+      <td class="px-4 py-2 text-right ${rc}">${d.reserveRatio.toFixed(1)}%</td>`;
+    tb.appendChild(tr);
+  });
+}
+ 
 // ── TAB 3 : 수출입 동향 ─────────────────────
 </script>
  
@@ -891,108 +998,7 @@ _TAB_HTML = """<!DOCTYPE html>
 </div>
  
 <script>
-// ── 탭 전환 ──────────────────────────────────
-function switchTab(t) {
-  ['supply','price'].forEach(id => {
-    document.getElementById('panel-'+id).classList.remove('show');
-    const b = document.getElementById('btn-'+id);
-    b.classList.remove('active-supply','active-price');
-    b.classList.add('text-slate-400');
-  });
-  document.getElementById('panel-'+t).classList.add('show','fade');
-  const ab = document.getElementById('btn-'+t);
-  ab.classList.remove('text-slate-400');
-  ab.classList.add(t==='supply'?'active-supply':'active-price');
-}
-
-// ── TAB 1 : 전력 수급 실적 ───────────────────
-const supplyCsv = `년,월,일,설비용량(MW),공급능력(MW),최대전력(MW),최소전력(MW),공급예비력(MW),공급예비율(%),최대전력기준일시,최소전력기준일시
-2026,04,04,158286,80984,60097,"47,964",20887,34.8,2026/04/04(20:00),2026/04/04(13:00)
-2026,04,03,158286,83542,66751,"51,469",16791,25.2,2026/04/03(20:00),2026/04/03(13:00)
-2026,04,02,158286,84464,68564,"48,190",15900,23.2,2026/04/02(20:00),2026/04/02(13:00)
-2026,04,01,158286,84186,69042,"54,387",15144,21.9,2026/04/01(20:00),2026/04/01(13:00)
-2026,03,29,158279,79005,58828,"38,669",20177,34.3,2026/03/29(20:00),2026/03/29(13:00)
-2026,03,28,158279,81846,59511,"39,508",22335,37.5,2026/03/28(20:00),2026/03/28(13:00)
-2026,03,27,158279,86943,66681,"50,324",20262,30.4,2026/03/27(20:00),2026/03/27(13:00)
-2026,03,26,158279,82756,68785,"49,640",13971,20.3,2026/03/26(20:00),2026/03/26(13:00)
-2026,01,18,157041,89495,64095,"48,844",25400,39.6,2026/01/18(19:00),2026/01/18(14:00)
-2026,01,17,157041,94901,67604,"52,524",27297,40.4,2026/01/17(19:00),2026/01/17(13:00)
-2026,01,16,157041,97649,80699,"61,089",16950,21,2026/01/16(10:00),2026/01/16(04:00)
-2026,01,15,157041,100678,81575,"61,449",19103,23.4,2026/01/15(10:00),2026/01/15(04:00)
-2026,01,14,156624,101498,85544,"65,005",15954,18.7,2026/01/14(09:00),2026/01/14(04:00)`;
-
-let powerData=[], chartPT=null, chartPR=null;
-const pN = v=>parseFloat(String(v||0).replace(/,/g,'').replace(/"/g,''))||0;
-const fN = n=>Number(n).toLocaleString();
-const fD = (y,m,d)=>`${String(y).trim()}-${String(m).trim().padStart(2,'0')}-${String(d).trim().padStart(2,'0')}`;
-
-Papa.parse(supplyCsv,{header:true,skipEmptyLines:true,complete:function(r){
-  const rows=r.data; if(!rows.length) return;
-  const ks=Object.keys(rows[0]), fk=kw=>ks.find(k=>k.includes(kw));
-  const kY=fk('년'),kM=fk('월'),kD=fk('일');
-  const kInst=fk('설비'),kSup=fk('공급능력'),kMax=fk('최대전력(MW)')||fk('최대전력');
-  const kMin=fk('최소전력(MW)')||fk('최소전력'),kRP=fk('공급예비력'),kRR=fk('공급예비율');
-  rows.forEach(r=>{
-    const item={date:fD(r[kY],r[kM],r[kD]),installedCap:pN(r[kInst]),supplyCap:pN(r[kSup]),
-      maxPower:pN(r[kMax]),minPower:pN(r[kMin]),reservePower:pN(r[kRP]),reserveRatio:pN(r[kRR])};
-    if(item.maxPower>0) powerData.push(item);
-  });
-  powerData.sort((a,b)=>new Date(a.date)-new Date(b.date));
-  setTimeout(initSupply,300);
-}});
-
-function initSupply(){
-  document.getElementById('loadingScreen').classList.add('hidden');
-  document.getElementById('supplyDash').classList.remove('hidden');
-  const last=powerData[powerData.length-1], first=powerData[0];
-  document.getElementById('supplyPeriod').innerText=`분석 기간: ${first.date} ~ ${last.date}`;
-  document.getElementById('dataCount').innerText=`총 ${fN(powerData.length)}일 데이터`;
-  document.getElementById('s-maxP').innerText=fN(last.maxPower);
-  document.getElementById('s-maxD').innerText=`${last.date} 기준`;
-  document.getElementById('s-sup').innerText=fN(last.supplyCap);
-  document.getElementById('s-supD').innerText=`${last.date} 기준`;
-  document.getElementById('s-rr').innerText=last.reserveRatio.toFixed(1);
-  const rEl=document.getElementById('s-rrStatus');
-  rEl.innerHTML=last.reserveRatio>=10?'<span class="text-emerald-600 font-bold">안정</span> (10% 이상)':
-    last.reserveRatio>=5?'<span class="text-amber-500 font-bold">주의</span> (5~10%)':
-    '<span class="text-rose-500 font-bold">위험</span> (5% 미만)';
-  const mx=powerData.reduce((a,b)=>b.maxPower>a.maxPower?b:a);
-  document.getElementById('s-histMax').innerText=fN(mx.maxPower);
-  document.getElementById('s-histDate').innerText=`${mx.date} 달성`;
-  const lbs=powerData.map(d=>d.date);
-  chartPT=new Chart(document.getElementById('powerTrendChart'),{type:'line',
-    data:{labels:lbs,datasets:[
-      {label:'공급능력(MW)',data:powerData.map(d=>d.supplyCap),borderColor:'#3b82f6',borderWidth:2,pointRadius:0,tension:0.1},
-      {label:'최대전력(MW)',data:powerData.map(d=>d.maxPower),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',borderWidth:2,pointRadius:0,fill:true,tension:0.1},
-      {label:'설비용량(MW)',data:powerData.map(d=>d.installedCap),borderColor:'#94a3b8',borderDash:[5,5],borderWidth:1.5,pointRadius:0,hidden:true}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fN(c.parsed.y)}`}}},
-      scales:{x:{grid:{display:false}},y:{title:{display:true,text:'전력 (MW)'},min:0}}}});
-  chartPR=new Chart(document.getElementById('reserveTrendChart'),{type:'bar',
-    data:{labels:lbs,datasets:[
-      {type:'line',label:'공급예비율(%)',data:powerData.map(d=>d.reserveRatio),borderColor:'#10b981',borderWidth:2,pointRadius:0,yAxisID:'y1',tension:0.2},
-      {type:'bar',label:'공급예비력(MW)',data:powerData.map(d=>d.reservePower),backgroundColor:'rgba(16,185,129,.2)',borderColor:'rgba(16,185,129,.5)',yAxisID:'y'}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      scales:{x:{grid:{display:false}},y:{position:'left',title:{display:true,text:'예비력(MW)'},min:0},
-        y1:{position:'right',title:{display:true,text:'예비율(%)'},min:0,grid:{drawOnChartArea:false}}}}});
-  const tb=document.getElementById('supplyTbody');
-  [...powerData].reverse().forEach(d=>{
-    const tr=document.createElement('tr'); tr.className='hover:bg-slate-50 transition-colors';
-    const rc=d.reserveRatio<10?'text-rose-600 font-bold':'text-emerald-600';
-    tr.innerHTML=`<td class="px-4 py-2 font-medium text-slate-700 whitespace-nowrap">${d.date}</td>
-      <td class="px-4 py-2 text-right text-slate-400">${fN(d.installedCap)}</td>
-      <td class="px-4 py-2 text-right font-medium text-blue-700">${fN(d.supplyCap)}</td>
-      <td class="px-4 py-2 text-right font-bold text-rose-600">${fN(d.maxPower)}</td>
-      <td class="px-4 py-2 text-right text-slate-400">${fN(d.minPower)}</td>
-      <td class="px-4 py-2 text-right text-slate-600">${fN(d.reservePower)}</td>
-      <td class="px-4 py-2 text-right ${rc}">${d.reserveRatio.toFixed(1)}%</td>`;
-    tb.appendChild(tr);
-  });
-}
-
-// ── TAB 2 : 연료원별 정산단가 ────────────────
+// placeholder — all logic already defined above
 const priceCsv=`기간,원자력,석탄,,,유류,LNG,양수,신재생,,,,,,,,,기타,합계
 ,,유연탄,무연탄,계,,,,연료전지,석탄가스화,태양,풍력,수력,해양,바이오,폐기물,계,,
 2026/02,92.40,133.25,225.01,133.36,532.08,152.31,199.20,106.58,0,101.27,106.31,125.95,0,147.21,0,115.81,137.44,127.59
@@ -1007,7 +1013,7 @@ const priceCsv=`기간,원자력,석탄,,,유류,LNG,양수,신재생,,,,,,,,,�
 2025/05,70.10,105.40,0,105.50,380.70,130.70,180.60,85.80,0,80.70,85.10,95.10,0,120.20,0,90.10,110.40,100.10
 2025/04,65.10,100.40,0,100.50,350.70,125.70,170.60,80.80,0,75.70,80.10,90.10,0,115.20,0,85.10,105.40,95.10
 2025/03,60.10,95.40,0,95.50,320.70,120.70,160.60,75.80,0,70.70,75.10,85.10,0,110.20,0,80.10,100.40,90.10`;
-
+ 
 let priceData=[];
 const qN=v=>{const n=parseFloat(v);return isNaN(n)?0:n;};
 (function initPrice(){
@@ -1068,8 +1074,8 @@ const qN=v=>{const n=parseFloat(v);return isNaN(n)?0:n;};
 </script>
 </body>
 </html>"""
-
-components.html(_TAB_HTML, height=1550, scrolling=False)
+ 
+components.html(_TAB_HTML, height=1650, scrolling=False)
 
 # ─────────────────────────────────────────────
 # 11. 푸터 + 자동 새로고침
