@@ -504,7 +504,7 @@ st.markdown("<div class='section-title'>실시간 전력 수급 현황</div>", u
 
 pwr_cols = st.columns(3)
 pwr_cards = [
-    {"name": "🏭 발전설비용량",    "value": "158,147",  "unit": "MW", "color": "#42a5f5", "sub": "원자력 26,050 · 석탄 40,766 · 가스 45,705 · 신재생 39,790", "date": "2026-03 기준"},
+    {"name": "🏭 발전설비용량",    "value": "158,286",  "unit": "MW", "color": "#42a5f5", "sub": "원자력 26,050 · 석탄 40,766 · 가스 45,705 · 신재생 39,790", "date": "2026-03 기준"},
     # {"name": "⚡ 현재 전력 수요",  "value": f"{pwr['curr']:,.0f}" if pwr else "-", "unit": "MW", "color": "#ff4b4b", "sub": "● LIVE", "date": pwr['formatted_time'] if pwr else "-"},
     # {"name": "🔌 공급능력",        "value": f"{pwr['supp']:,.0f}" if pwr else "-", "unit": "MW", "color": "#00d4ff", "sub": "공급 가능량", "date": pwr['formatted_time'] if pwr else "-"},
 ]
