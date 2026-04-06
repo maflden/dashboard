@@ -746,7 +746,150 @@ _TAB_HTML = """<!DOCTYPE html>
   </div>
 </div>
 
-</div><!-- /wrapper -->
+
+// ── TAB 3 : 수출입 동향 ─────────────────────
+</script>
+ 
+<!-- ══ TAB 3 : 2026년 3월 수출입 동향 ══ -->
+<div id="panel-trade" class="tab-panel space-y-5">
+  <style>
+    #panel-trade .tr-header {
+      background: linear-gradient(135deg, #003366, #0056b3);
+      color: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    #panel-trade .tr-badge {
+      background: #e67e22; color: #fff;
+      padding: 4px 14px; border-radius: 20px;
+      font-size: 0.8rem; font-weight: bold;
+      display: inline-block; margin-bottom: 0.75rem;
+    }
+    #panel-trade h2 {
+      color: #003366;
+      border-left: 5px solid #0056b3;
+      padding-left: 12px;
+      margin: 1.5rem 0 1rem;
+      font-size: 1.1rem;
+    }
+    #panel-trade .tr-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 1.25rem;
+    }
+    #panel-trade .tr-stat {
+      text-align: center; padding: 16px;
+      background: #f8fafc; border-radius: 10px;
+      border: 1px solid #e2e8f0;
+    }
+    #panel-trade .tr-val {
+      display: block; font-size: 1.5rem;
+      font-weight: 800; color: #0056b3;
+    }
+    #panel-trade .tr-lbl { font-size: 0.8rem; color: #666; }
+    #panel-trade .tr-up  { color: #e74c3c; font-weight: bold; font-size: 0.85rem; }
+    #panel-trade table   { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9rem; }
+    #panel-trade th, #panel-trade td { padding: 11px 14px; border-bottom: 1px solid #ddd; text-align: left; }
+    #panel-trade th      { background: #f2f2f2; color: #003366; font-size: 0.8rem; }
+    #panel-trade .tr-highlight {
+      background: #fff9f0; border-left: 5px solid #e67e22;
+      padding: 12px 16px; border-radius: 6px; font-size: 0.9rem;
+    }
+    #panel-trade blockquote {
+      font-style: italic; color: #555;
+      border-left: 3px solid #ccc; padding-left: 16px; margin: 0;
+      font-size: 0.9rem; line-height: 1.7;
+    }
+    @media(max-width:640px){ #panel-trade .tr-stats{ grid-template-columns: 1fr 1fr; } }
+  </style>
+ 
+  <!-- 헤더 배너 -->
+  <div class="tr-header">
+    <div class="tr-badge">실시간 무역 통계</div>
+    <div style="font-size:1.6rem;font-weight:900;letter-spacing:-0.5px;">2026년 3월 수출입 동향</div>
+    <div style="font-size:0.95rem;opacity:0.85;margin-top:6px;">대한민국 수출 역사상 첫 800억 달러 시대 개막</div>
+  </div>
+ 
+  <!-- 총괄 -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+    <h2>📊 3월 무역 총괄</h2>
+    <p style="font-size:0.9rem;color:#444;">2026년 3월 수출은 전년 대비 48.3% 증가한 <strong>861.3억 달러</strong>를 기록하며, 전 기간 역대 최대 실적을 경신했습니다.</p>
+    <div class="tr-stats">
+      <div class="tr-stat">
+        <span class="tr-lbl">수출액</span>
+        <span class="tr-val">861.3억$</span>
+        <span class="tr-up">▲ 48.3%</span>
+      </div>
+      <div class="tr-stat">
+        <span class="tr-lbl">수입액</span>
+        <span class="tr-val">604.0억$</span>
+        <span class="tr-up">▲ 13.2%</span>
+      </div>
+      <div class="tr-stat">
+        <span class="tr-lbl">무역수지</span>
+        <span class="tr-val">257.4억$</span>
+        <span class="tr-lbl">14개월 연속 흑자</span>
+      </div>
+      <div class="tr-stat">
+        <span class="tr-lbl">일평균 수출</span>
+        <span class="tr-val">37.4억$</span>
+        <span class="tr-up">▲ 41.9%</span>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- 품목별 -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+    <h2>💡 주요 품목별 수출 실적</h2>
+    <table>
+      <thead>
+        <tr><th>품목명</th><th>수출액(억 달러)</th><th>증감률</th><th>주요 특징</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>반도체</strong></td><td>328.3</td><td class="tr-up">+151.4%</td><td>사상 첫 300억 달러 돌파, AI 서버 수요 급증</td></tr>
+        <tr><td><strong>자동차</strong></td><td>63.7</td><td>+2.2%</td><td>하이브리드·전기차 등 친환경차 수출 호조</td></tr>
+        <tr><td><strong>컴퓨터/SSD</strong></td><td>34.2</td><td class="tr-up">+189.2%</td><td>기업용 SSD 수요 폭발적 증가</td></tr>
+        <tr><td><strong>석유제품</strong></td><td>51.0</td><td class="tr-up">+54.9%</td><td>유가 상승에 따른 수출 단가 상승</td></tr>
+      </tbody>
+    </table>
+    <div class="tr-highlight">
+      <strong>특이사항:</strong> 15대 주력 품목 중 10개 품목이 플러스를 기록하며 산업 전반의 고른 성장세를 시현하였습니다.
+    </div>
+  </div>
+ 
+  <!-- 지역별 -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+    <h2>🌍 지역별 수출 현황</h2>
+    <table>
+      <thead><tr><th>지역</th><th>수출액</th><th>증감률</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td><strong>중국</strong></td><td>165.1억$</td><td class="tr-up">+64.2%</td><td>반도체·석유화학 호조, 5개월 연속 플러스</td></tr>
+        <tr><td><strong>미국</strong></td><td>163.4억$</td><td class="tr-up">+47.1%</td><td>IT 품목 세 자릿수 증가, 역대 최대 실적</td></tr>
+        <tr><td><strong>아세안</strong></td><td>137.5억$</td><td class="tr-up">+34.3%</td><td>역대 3월 중 최대 실적 경신</td></tr>
+        <tr><td><strong>중동</strong></td><td>9.0억$</td><td style="color:red;font-weight:bold;">-49.1%</td><td>중동 전쟁으로 인한 물류 차질 여파</td></tr>
+      </tbody>
+    </table>
+  </div>
+ 
+  <!-- 정책 제언 -->
+  <div class="bg-white rounded-xl shadow-sm border-t-4 border-t-blue-900 border border-slate-200 p-5">
+    <h2>📝 정책 제언 및 전망</h2>
+    <blockquote>
+      "수출 사상 첫 800억 달러 돌파는 우리 산업의 경쟁력을 보여주는 지표입니다.
+      다만 중동 불확실성과 공급망 리스크가 상존하는 만큼, 범정부적 지원을 통해 수출 우상향 기조를 공고히 하겠습니다."
+      <br><br>
+      <strong>— 산업통상자원부 장관 김정관</strong>
+    </blockquote>
+  </div>
+ 
+  <div style="text-align:center;font-size:0.78rem;color:#999;padding:8px 0;">
+    © 2026 산업통상자원부 무역정책관실 | 본 데이터는 관세청 통관자료(잠정치)를 기반으로 작성되었습니다.
+  </div>
+</div>
+ 
 <script>
 // ── 탭 전환 ──────────────────────────────────
 function switchTab(t) {
